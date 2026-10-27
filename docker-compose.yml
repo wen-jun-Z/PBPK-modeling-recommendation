@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: pbpk_stage1_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pbpk_kb}
+      POSTGRES_USER: ${POSTGRES_USER:-pbpk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pbpk_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pbpk_postgres_data:/var/lib/postgresql/data
+      - ./src/pbpk_kb/storage/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pbpk} -d ${POSTGRES_DB:-pbpk_kb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: pbpk_stage1_api
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pbpk}:${POSTGRES_PASSWORD:-pbpk_password}@postgres:5432/${POSTGRES_DB:-pbpk_kb}
+      PBPK_SOURCE_REGISTRY_PATH: /app/pbpk_kb/config/sources.yaml
+      PBPK_SERVICE_NAME: pbpk-stage1-public-kb
+      PBPK_SERVICE_VERSION: 0.1.0
+      PBPK_EMBEDDING_API_URL: ${PBPK_EMBEDDING_API_URL:-http://host.docker.internal:8010}
+      PBPK_EMBEDDING_MODEL: ${PBPK_EMBEDDING_MODEL:-NeuML/pubmedbert-base-embeddings}
+      PBPK_EMBEDDING_TIMEOUT_SECONDS: ${PBPK_EMBEDDING_TIMEOUT_SECONDS:-30}
+      OPENBLAS_NUM_THREADS: ${OPENBLAS_NUM_THREADS:-1}
+      OMP_NUM_THREADS: ${OMP_NUM_THREADS:-4}
+      MKL_NUM_THREADS: ${MKL_NUM_THREADS:-1}
+      NUMEXPR_NUM_THREADS: ${NUMEXPR_NUM_THREADS:-1}
+      TOKENIZERS_PARALLELISM: "false"
+      PYTORCH_CUDA_ALLOC_CONF: ${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}
+      PBPK_RECOMMENDATION_BLAS_THREADS: ${PBPK_RECOMMENDATION_BLAS_THREADS:-1}
+      PBPK_RECOMMENDATION_TORCH_THREADS: ${PBPK_RECOMMENDATION_TORCH_THREADS:-4}
+      PBPK_RECOMMENDATION_TORCH_INTEROP_THREADS: ${PBPK_RECOMMENDATION_TORCH_INTEROP_THREADS:-1}
+      PBPK_MODEL_MATCHING_EVALUATION_MANIFEST: ${PBPK_MODEL_MATCHING_EVALUATION_MANIFEST:-}
+      PBPK_MODEL_MATCHING_SUITE_MANIFEST: ${PBPK_MODEL_MATCHING_SUITE_MANIFEST:-}
+      PBPK_MODEL_MATCHING_STATISTICS_PATH: ${PBPK_MODEL_MATCHING_STATISTICS_PATH:-}
+      PBPK_MODEL_MATCHING_SIMULATION_PATH: ${PBPK_MODEL_MATCHING_SIMULATION_PATH:-}
+      PBPK_MODEL_MATCHING_PERTURBATION_SIMULATION_PATH: ${PBPK_MODEL_MATCHING_PERTURBATION_SIMULATION_PATH:-}
+      PBPK_MODEL_MATCHING_RESEARCH_REPORT_PATH: ${PBPK_MODEL_MATCHING_RESEARCH_REPORT_PATH:-}
+      PBPK_MODEL_MATCHING_CONDITIONAL_REPORT_PATH: ${PBPK_MODEL_MATCHING_CONDITIONAL_REPORT_PATH:-}
+      PBPK_MODEL_MATCHER_SERVING_MANIFEST: ${PBPK_MODEL_MATCHER_SERVING_MANIFEST:-}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./data_process:/app/data_process:ro
+      # Preserve the immutable absolute paths recorded by the formal GPU-run manifests.
+      - ./experiments/model_recommendation/reports:/root/autodl-tmp/pbpk-model-assets/model_matching:ro
+      - ./experiments:/app/experiments:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ui:
+    build: .
+    container_name: pbpk_stage1_ui
+    command:
+      [
+        "streamlit",
+        "run",
+        "pbpk_kb/ui/streamlit_app.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8501",
+        "--browser.gatherUsageStats=false"
+      ]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pbpk}:${POSTGRES_PASSWORD:-pbpk_password}@postgres:5432/${POSTGRES_DB:-pbpk_kb}
+      API_BASE_URL: http://api:8000
+      PBPK_SOURCE_REGISTRY_PATH: /app/pbpk_kb/config/sources.yaml
+      PBPK_SERVICE_NAME: pbpk-stage1-public-kb
+      PBPK_SERVICE_VERSION: 0.1.0
+    ports:
+      - "${STREAMLIT_PORT:-8501}:8501"
+    volumes:
+      - ./data_process:/app/data_process:ro
+      - ./experiments:/app/experiments:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+volumes:
+  pbpk_postgres_data:

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PBPK · 研究工作台</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/static/style.css"><link rel="stylesheet" href="/static/blueprints.css"><script defer src="/static/graph.js"></script><script defer src="/static/charts.js"></script><script defer src="/static/research.js"></script><script defer src="/static/blueprints.js"></script><script defer src="/static/app.js"></script></head>
+<body>
+<section id="login" class="login-shell" hidden><form id="login-form" class="login-card"><div class="brand-mark">P<span>k</span></div><p class="eyebrow">YOUR PRIVATE RESEARCH SPACE</p><h1>回到你的研究。</h1><p class="muted">PBPK 知识库与模型推荐 · 个人工作台</p><label>个人访问码<input name="access_code" type="password" autocomplete="current-password" required placeholder="输入项目的个人访问码"></label><button class="primary" type="submit">进入工作台 <span>→</span></button><p id="login-error" class="error" role="alert"></p><p class="small muted">访问码保存在项目 runtime/deployment/workspace/access.key，使用服务器账号查看。</p></form></section>
+<div id="workspace" hidden>
+<aside class="sidebar"><a class="brand" href="#overview"><div class="brand-mark">P<span>k</span></div><div><strong>PBPK<span class="brand-light"> Workspace</span></strong><small>证据驱动的模型研究</small></div></a><p class="nav-label">研究空间</p><nav id="nav"></nav><div class="sidebar-bottom"><span class="live-dot"></span> 个人访问空间<p>资料可追溯 · 结果可复查</p><button id="logout" class="text-button">退出登录 ↗</button></div></aside>
+<div class="main-shell"><header class="topbar"><span id="breadcrumb">工作空间 / 总览</span><div><span class="private-badge">◉ 个人会话</span><span id="today"></span></div></header><main id="main" tabindex="-1"></main><footer>PBPK RESEARCH WORKSPACE <span>连接真实知识库与公共模型目录</span></footer></div>
+</div>
+<dialog id="detail"><header><div><p class="eyebrow">RECORD DETAIL</p><h2 id="detail-title"></h2></div><button id="close-detail" class="icon-button" aria-label="关闭详情">×</button></header><div id="detail-body"></div></dialog>
+<div id="toast" role="status" hidden></div>
+</body></html>

@@ -1,0 +1,43 @@
+schema_version: "1.0.0"
+
+model_repository:
+  source_id: osp_pbpk_model_library
+  repository_url: https://github.com/Open-Systems-Pharmacology/OSP-PBPK-Model-Library.git
+  release_tag: v12.3.1
+  commit_sha: 07a71b3e025879db5cc46feca1d262cc786ed0f6
+
+osp_suite:
+  release_name: OSP Suite 12 Update 3 Hotfix 1
+  version: 12.3.263
+  installer_name: OSPSuite-Full.12.3.263.exe
+  installer_url: https://github.com/Open-Systems-Pharmacology/Suite/releases/download/v12.3.263/OSPSuite-Full.12.3.263.exe
+  installer_sha256: e910a46f76c852f9f5a021257c021a9e5c101934f722ef11cb9ff9eb10a939aa
+
+pksim:
+  version: 12.3.173
+  portable_name: PKSim-Portable.12.3.173.zip
+  portable_url: https://github.com/Open-Systems-Pharmacology/PK-Sim/releases/download/v12.3.173/PKSim-Portable.12.3.173.zip
+  portable_sha256: 94a704b67c05042131cd5e51b4237b1633466a08cd6ec77506322b4d009c8567
+  cli_relative_path: PKSim.CLI.exe
+  export_flags:
+    - -k
+    - -x
+    - -c
+    - -r
+
+ospsuite_r:
+  version: 12.4.3
+  linux_binary_name: ospsuite_12.4.3_R_x86_64-pc-linux-gnu.tar.gz
+  linux_binary_url: https://github.com/Open-Systems-Pharmacology/OSPSuite-R/releases/download/v12.4.3/ospsuite_12.4.3_R_x86_64-pc-linux-gnu.tar.gz
+  linux_binary_sha256: 9f2ae868ee072b363e824618c63e1a804a9ff04c7c757b8227c14fece86038fb
+
+execution:
+  worker_platform: Windows
+  command_timeout_seconds: 21600
+  require_all_projects: true
+  require_all_simulations: true
+  immutable_outputs: true
+  required_export_extensions:
+    - .pkml
+    - .xml
+    - .csv

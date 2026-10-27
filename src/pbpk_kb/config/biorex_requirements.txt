@@ -1,0 +1,14 @@
+# Isolated environment for the official NCBI BioREx TensorFlow checkpoint.
+# Intentionally excludes accelerate/PyTorch: the official prediction path is TensorFlow-only.
+tensorflow==2.18.0
+tf-keras==2.18.0
+transformers==4.47.1
+datasets==3.2.0
+pandas==2.2.3
+protobuf==5.29.2
+sentencepiece==0.2.2
+scispacy==0.5.5
+numpy==1.26.4
+scipy==1.13.1
+click==8.1.8
+https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz

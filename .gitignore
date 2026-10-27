@@ -1,0 +1,37 @@
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.streamlit/credentials.toml
+.venv/
+venv/
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pbpk_stage1_public_kb.egg-info/
+raw/
+parsed/
+normalized/
+exports/
+ingestion_logs/
+data_process/
+artifacts/
+backups/
+dependencies/
+migration/
+runtime/
+
+# Organized experiment outputs and local archives
+experiments/
+archive/
+src/*.egg-info/
+
+# Local package alias and generated native-software settings
+/pbpk_kb
+/Open Systems Pharmacology*/
+
+# Research manuscripts and generated outputs stay on the private server.
+/results/

@@ -1,0 +1,4 @@
+# Isolated local-LLM runtime. Create with --system-site-packages to reuse CUDA Torch.
+autoawq==0.2.9
+tokenizers==0.21.4
+transformers==4.51.3

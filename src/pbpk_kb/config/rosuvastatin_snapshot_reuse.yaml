@@ -1,0 +1,61 @@
+schema_version: "1.0.0"
+
+source:
+  source_id: osp_rosuvastatin_model
+  model_id: rosuvastatin
+  model_name: Rosuvastatin
+  repository_url: https://github.com/Open-Systems-Pharmacology/Rosuvastatin-Model.git
+  release_tag: v1.0
+  commit_sha: ffbacba8ff1978150f5e008fecbd12d8877d1fa1
+  license_spdx_id: GPL-2.0-only
+  license_relative_path: LICENSE
+  license_sha256: b90ed8150a6d371c84b7dbaa680cd0e9893ef7c2558765e1e00930513efcfe3b
+  snapshot_relative_path: Rosuvastatin-Model.json
+  snapshot_sha256: 21361305c75e3144fac0053f1dbc62ec0f496fc6cfc4ad8997cf60b3182592dd
+  snapshot_schema_version: 79
+  evaluation_plan_relative_path: Evaluation/Input/evaluation_plan.json
+  evaluation_plan_sha256: bd7c2e743fd5fa748bb5b3550e8c07be10e1d36b46379fb6ce0d9ab826221ed9
+  source_archive_name: Rosuvastatin-Model-v1.0.tar.gz
+  source_archive_sha256: 9592d1c5013ad179113eec04f1447749390197eac21be75ad6cc80288903287d
+
+expected_counts:
+  compounds: 1
+  expression_profiles: 428
+  formulations: 2
+  individuals: 39
+  protocols: 14
+  simulations: 42
+  observed_data: 60
+  simulation_classifications: 3
+  model_building: 10
+  model_verification: 26
+  execution_only: 6
+
+partition:
+  all_plots_path: Plots.AllPlots
+  development_section_id: 331
+  verification_section_id: 332
+
+runtime:
+  pksim_version: 12.3.173
+  pksim_portable_sha256: 94a704b67c05042131cd5e51b4237b1633466a08cd6ec77506322b4d009c8567
+  cli_relative_path: PKSim.CLI.exe
+  command_timeout_seconds: 21600
+  required_export_extensions:
+    - .pkml
+    - .xml
+    - .csv
+
+criteria:
+  absolute_tolerance: 1.0e-12
+  relative_tolerance: 1.0e-10
+  pooled_gmfe_max: 2.0
+  pooled_bias_min: 0.5
+  pooled_bias_max: 2.0
+  pooled_two_fold_fraction_min: 0.8
+  dataset_gmfe_max: 3.0
+  dataset_bias_min: 0.3333333333333333
+  dataset_bias_max: 3.0
+  endpoint_ratio_min: 0.5
+  endpoint_ratio_max: 2.0
+  endpoint_scenario_fraction_min: 0.8

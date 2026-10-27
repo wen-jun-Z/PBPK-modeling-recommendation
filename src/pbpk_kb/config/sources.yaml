@@ -1,0 +1,686 @@
+- source_id: osp_pbpk_model_library
+  source_name: OSP-PBPK-Model-Library
+  source_family: public_model_repository
+  access_url: https://github.com/Open-Systems-Pharmacology/OSP-PBPK-Model-Library
+  api_url: https://api.github.com/repos/Open-Systems-Pharmacology/OSP-PBPK-Model-Library
+  access_method: git_clone_or_github_api
+  expected_format:
+  - pkml
+  - pdf
+  - xlsx
+  - csv
+  - markdown
+  refresh_frequency: monthly
+  license_notes: Verify repository license and attribution requirements before redistribution.
+  connector: osp_model_library.py
+  parser: model_file_parser.py
+  entities:
+  - pbpk_model
+  - compound
+  - model_parameter
+  - evaluation_report
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed osp_pbpk_model_library metadata
+    records, and ingestion log metrics.
+  first_validation_check: Run the osp_pbpk_model_library connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: osp_tools_docs
+  source_name: Open Systems Pharmacology Tools and Documentation
+  source_family: public_model_repository
+  access_url: https://www.open-systems-pharmacology.org/
+  api_url: https://github.com/Open-Systems-Pharmacology
+  access_method: github_api_and_documentation_crawl
+  expected_format:
+  - html
+  - markdown
+  - json
+  refresh_frequency: monthly
+  license_notes: Capture source URLs and repository license metadata separately from
+    the model library.
+  connector: osp_tools_docs.py
+  parser: html_parser.py
+  entities:
+  - software_context
+  - repository
+  - documentation
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed osp_tools_docs metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the osp_tools_docs connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: pkdb
+  source_name: PK-DB
+  source_family: structured_pk_database
+  access_url: https://pk-db.com
+  api_url: https://pk-db.com/api/v1/
+  access_method: rest_api_where_practical
+  expected_format:
+  - json
+  - csv
+  refresh_frequency: monthly
+  license_notes: Preserve study, intervention, unit, and source-publication metadata.
+  connector: pkdb.py
+  parser: json_parser.py
+  entities:
+  - pk_study
+  - substance
+  - intervention
+  - time_course
+  - pk_parameter
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed pkdb metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the pkdb connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: pubmed
+  source_name: PubMed
+  source_family: literature_metadata
+  access_url: https://eutilities.github.io/site/
+  api_url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/
+  access_method: ncbi_eutilities
+  expected_format:
+  - xml
+  - json
+  refresh_frequency: weekly
+  license_notes: Use NCBI E-utilities responsibly; store PMID and citation metadata.
+  connector: pubmed.py
+  parser: xml_parser.py
+  entities:
+  - publication
+  - abstract
+  - mesh_term
+  - compound
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed pubmed metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the pubmed connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: pmc_oa
+  source_name: PMC Open Access
+  source_family: literature_full_text
+  access_url: https://pmc.ncbi.nlm.nih.gov/tools/openftlist/
+  api_url: https://pmc.ncbi.nlm.nih.gov/tools/developers/
+  access_method: pmc_oa_ftp_cloud_oai_bioc
+  expected_format:
+  - xml
+  - nxml
+  - csv
+  - json
+  refresh_frequency: monthly
+  license_notes: Use approved OA services and preserve article license metadata and
+    OA subset path.
+  connector: pmc_oa.py
+  parser: xml_parser.py
+  entities:
+  - full_text_article
+  - supplementary_file
+  - license
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed pmc_oa metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the pmc_oa connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: dailymed
+  source_name: DailyMed SPL
+  source_family: regulatory_label
+  access_url: https://dailymed.nlm.nih.gov/dailymed/spl-resources.cfm
+  api_url: https://dailymed.nlm.nih.gov/dailymed/webservices-help/v2/spls_api.cfm
+  access_method: bulk_spl_xml_and_rest_api
+  expected_format:
+  - xml
+  - zip
+  - json
+  refresh_frequency: monthly
+  license_notes: Public SPL label data; preserve SPL set ID, label date, and source
+    URL.
+  connector: dailymed.py
+  parser: label_parser.py
+  entities:
+  - label
+  - product
+  - dose
+  - pk_summary
+  - ddi_summary
+  - special_population
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed dailymed metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the dailymed connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: fda_label_search
+  source_name: FDA Label Search
+  source_family: regulatory_label_discovery
+  access_url: https://labels.fda.gov/
+  api_url: https://www.fda.gov/science-research/bioinformatics-tools/fdalabel-full-text-search-drug-product-labeling
+  access_method: regulatory_label_search
+  expected_format:
+  - html
+  - json
+  refresh_frequency: monthly
+  license_notes: Use as label discovery layer and link results back to SPL or label
+    records.
+  connector: fda_label_search.py
+  parser: html_parser.py
+  entities:
+  - label_search_hit
+  - application_number
+  - label_url
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed fda_label_search metadata
+    records, and ingestion log metrics.
+  first_validation_check: Run the fda_label_search connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: drugs_fda
+  source_name: Drugs@FDA
+  source_family: regulatory_product_database
+  access_url: https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files
+  api_url: null
+  access_method: download_fda_data_zip
+  expected_format:
+  - zip
+  - tsv
+  - txt
+  refresh_frequency: monthly
+  license_notes: Preserve application, product, submission, and approval-date metadata.
+  connector: drugs_fda.py
+  parser: csv_parser.py
+  entities:
+  - application
+  - product
+  - submission
+  - approval
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed drugs_fda metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the drugs_fda connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: fda_ddi
+  source_name: FDA DDI Tables
+  source_family: ddi_reference
+  access_url: https://www.fda.gov/drugs/drug-interactions-labeling/drug-development-and-drug-interactions-table-substrates-inhibitors-and-inducers
+  api_url: null
+  access_method: html_table_parser
+  expected_format:
+  - html
+  refresh_frequency: monthly
+  license_notes: Capture page version/date and relationship type for CYP/transporter
+    rows.
+  connector: fda_ddi.py
+  parser: table_parser.py
+  entities:
+  - substrate
+  - inhibitor
+  - inducer
+  - enzyme
+  - transporter
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed fda_ddi metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the fda_ddi connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: pubchem
+  source_name: PubChem
+  source_family: compound_database
+  access_url: https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest
+  api_url: https://pubchem.ncbi.nlm.nih.gov/rest/pug
+  access_method: pug_rest_api
+  expected_format:
+  - json
+  - xml
+  refresh_frequency: monthly
+  license_notes: Resolve names to CID and InChIKey; store source URLs and request
+    metadata.
+  connector: pubchem.py
+  parser: json_parser.py
+  entities:
+  - compound
+  - synonym
+  - structure
+  - physicochemical_property
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed pubchem metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the pubchem connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: chembl
+  source_name: ChEMBL
+  source_family: bioactivity_database
+  access_url: https://www.ebi.ac.uk/chembl/api/data/docs
+  api_url: https://www.ebi.ac.uk/chembl/api/data
+  access_method: chembl_api_or_official_python_client
+  expected_format:
+  - json
+  - xml
+  refresh_frequency: monthly
+  license_notes: Preserve ChEMBL IDs, target/activity records, assay metadata, and
+    units.
+  connector: chembl.py
+  parser: json_parser.py
+  entities:
+  - compound
+  - target
+  - activity
+  - assay
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed chembl metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the chembl connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: bindingdb
+  source_name: BindingDB
+  source_family: bioactivity_database
+  access_url: https://www.bindingdb.org/rwd/bind/BindingDBRESTfulAPI.jsp
+  api_url: https://www.bindingdb.org/rwd/bind/BindingDBRESTfulAPI.jsp
+  access_method: rest_api_or_download
+  expected_format:
+  - json
+  - xml
+  - tsv
+  refresh_frequency: monthly
+  license_notes: Store affinity units, target identifiers, ligand identifiers, and
+    source publication.
+  connector: bindingdb.py
+  parser: json_parser.py
+  entities:
+  - binding_affinity
+  - target
+  - ligand
+  - publication
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed bindingdb metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the bindingdb connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: drugcentral
+  source_name: DrugCentral
+  source_family: drug_metadata_database
+  access_url: https://drugcentral.org/download
+  api_url: null
+  access_method: download_tsv_postgres_dump_or_sdf
+  expected_format:
+  - tsv
+  - sql
+  - sdf
+  refresh_frequency: monthly
+  license_notes: Preserve DrugCentral IDs, structures, products, approvals, targets,
+    and indications.
+  connector: drugcentral.py
+  parser: csv_parser.py
+  entities:
+  - drug
+  - structure
+  - product
+  - approval
+  - target
+  - indication
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed drugcentral metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the drugcentral connector for one known compound and
+    verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: rxnorm
+  source_name: RxNorm / RxNav
+  source_family: clinical_drug_identifier
+  access_url: https://lhncbc.nlm.nih.gov/RxNav/APIs/RxNormAPIs.html
+  api_url: https://rxnav.nlm.nih.gov/REST
+  access_method: rxnorm_api
+  expected_format:
+  - json
+  - xml
+  refresh_frequency: monthly
+  license_notes: Resolve active ingredient names to RxCUI and synonym sets.
+  connector: rxnorm.py
+  parser: json_parser.py
+  entities:
+  - ingredient
+  - rxcui
+  - synonym
+  - clinical_drug_product
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed rxnorm metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the rxnorm connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: uniprot
+  source_name: UniProt
+  source_family: protein_identifier
+  access_url: https://www.uniprot.org/help/programmatic_access
+  api_url: https://rest.uniprot.org
+  access_method: uniprot_rest_api
+  expected_format:
+  - json
+  - tsv
+  - xml
+  refresh_frequency: monthly
+  license_notes: Preserve UniProtKB ID, gene names, annotations, and cross-references.
+  connector: uniprot.py
+  parser: json_parser.py
+  entities:
+  - protein
+  - gene
+  - enzyme
+  - transporter
+  - cross_reference
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed uniprot metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the uniprot connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: hpa
+  source_name: Human Protein Atlas
+  source_family: tissue_expression
+  access_url: https://www.proteinatlas.org/about/download
+  api_url: https://www.proteinatlas.org/about/help/dataaccess
+  access_method: download_tsv_or_targeted_json
+  expected_format:
+  - tsv
+  - json
+  - xml
+  refresh_frequency: quarterly
+  license_notes: Preserve tissue/cell expression rows, localization context, and data-release
+    metadata.
+  connector: hpa.py
+  parser: csv_parser.py
+  entities:
+  - protein
+  - tissue_expression
+  - cell_expression
+  - localization
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed hpa metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the hpa connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: gtex
+  source_name: GTEx
+  source_family: tissue_expression
+  access_url: https://www.gtexportal.org/home/datasets
+  api_url: https://www.gtexportal.org/home/apiPage
+  access_method: bulk_download_or_api_lookup
+  expected_format:
+  - tsv
+  - txt
+  - json
+  refresh_frequency: quarterly
+  license_notes: Preserve tissue expression summaries, metadata, and release identifiers.
+  connector: gtex.py
+  parser: csv_parser.py
+  entities:
+  - gene_expression
+  - tissue
+  - sample_metadata
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed gtex metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the gtex connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: clinicaltrials
+  source_name: ClinicalTrials.gov
+  source_family: clinical_trial_metadata
+  access_url: https://clinicaltrials.gov/data-api/api
+  api_url: https://clinicaltrials.gov/api/v2
+  access_method: modernized_clinicaltrials_api
+  expected_format:
+  - json
+  refresh_frequency: monthly
+  license_notes: Store NCT ID, study design, intervention, population, and dose/regimen
+    text.
+  connector: clinicaltrials.py
+  parser: json_parser.py
+  entities:
+  - clinical_trial
+  - intervention
+  - population
+  - dose_regimen
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed clinicaltrials metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the clinicaltrials connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: aact
+  source_name: AACT
+  source_family: clinical_trial_metadata
+  access_url: https://aact.ctti-clinicaltrials.org/
+  api_url: null
+  access_method: relational_snapshot_or_public_postgres
+  expected_format:
+  - postgres
+  - csv
+  refresh_frequency: monthly
+  license_notes: Preserve ClinicalTrials.gov relational records and snapshot version
+    metadata.
+  connector: aact.py
+  parser: csv_parser.py
+  entities:
+  - clinical_trial
+  - intervention
+  - condition
+  - outcome
+  - population
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed aact metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the aact connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: nhanes
+  source_name: NHANES
+  source_family: population_covariate
+  access_url: https://wwwn.cdc.gov/nchs/nhanes/Default.aspx
+  api_url: null
+  access_method: download_cdc_xpt_datasets
+  expected_format:
+  - xpt
+  - sas
+  - csv
+  refresh_frequency: yearly
+  license_notes: Preserve cycle, domain, demographic, body-size, lab, and SEQN join-key
+    metadata.
+  connector: nhanes.py
+  parser: csv_parser.py
+  entities:
+  - demographics
+  - body_measure
+  - lab
+  - renal_covariate
+  - hepatic_covariate
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed nhanes metadata records, and
+    ingestion log metrics.
+  first_validation_check: Run the nhanes connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: ema_epar
+  source_name: EMA Medicine Data / EPARs
+  source_family: regulatory_assessment_report
+  access_url: https://www.ema.europa.eu/en/medicines/download-medicine-data
+  api_url: null
+  access_method: download_ema_medicine_data_and_linked_epar_pdfs
+  expected_format:
+  - xlsx
+  - csv
+  - pdf
+  - html
+  refresh_frequency: monthly
+  license_notes: Preserve EMA medicine metadata, EPAR URLs, assessment report dates,
+    and source URLs.
+  connector: ema_epar.py
+  parser: pdf_parser.py
+  entities:
+  - medicine
+  - assessment_report
+  - clinical_pharmacology_context
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed ema_epar metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the ema_epar connector for one known compound and verify
+    raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: fda_orange_book
+  source_name: FDA Orange Book
+  source_family: regulatory_product_database
+  access_url: https://www.fda.gov/drugs/drug-approvals-and-databases/orange-book-data-files
+  api_url: null
+  access_method: download_orange_book_data_files
+  expected_format:
+  - zip
+  - txt
+  - csv
+  refresh_frequency: monthly
+  license_notes: Preserve product, dosage-form, strength, RLD, and application metadata.
+  connector: fda_orange_book.py
+  parser: csv_parser.py
+  entities:
+  - product
+  - dosage_form
+  - strength
+  - reference_listed_drug
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed fda_orange_book metadata records,
+    and ingestion log metrics.
+  first_validation_check: Run the fda_orange_book connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: fda_inactive_ingredient_database
+  source_name: FDA Inactive Ingredient Database
+  source_family: formulation_excipient_database
+  access_url: https://www.fda.gov/drugs/drug-approvals-and-databases/inactive-ingredients-database-download
+  api_url: null
+  access_method: download_iid_file
+  expected_format:
+  - xlsx
+  - csv
+  refresh_frequency: monthly
+  license_notes: Preserve excipient, route, dosage form, potency, and unit metadata.
+  connector: fda_inactive_ingredient_database.py
+  parser: csv_parser.py
+  entities:
+  - excipient
+  - route
+  - dosage_form
+  - potency
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed fda_inactive_ingredient_database
+    metadata records, and ingestion log metrics.
+  first_validation_check: Run the fda_inactive_ingredient_database connector for one
+    known compound and verify raw checksum plus at least one parsed record or explicit
+    no-match record.
+- source_id: openfda_drug_label
+  source_name: openFDA Drug Label
+  source_family: regulatory_label
+  access_url: https://open.fda.gov/apis/drug/label/download/
+  api_url: https://api.fda.gov/drug/label.json
+  access_method: openfda_label_api_or_json_download
+  expected_format:
+  - json
+  - zip
+  refresh_frequency: monthly
+  license_notes: Preserve label JSON, SPL/application identifiers, active ingredient,
+    and query URL.
+  connector: openfda_drug_label.py
+  parser: json_parser.py
+  entities:
+  - label
+  - active_ingredient
+  - application_number
+  - structured_section
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed openfda_drug_label metadata
+    records, and ingestion log metrics.
+  first_validation_check: Run the openfda_drug_label connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
+- source_id: epa_comptox_httk
+  source_name: EPA CompTox / httk
+  source_family: toxicokinetic_reference
+  access_url: https://www.epa.gov/comptox-tools/computational-toxicology-and-exposure-apis
+  api_url: https://api-ccte.epa.gov
+  access_method: api_download_or_r_package_metadata
+  expected_format:
+  - json
+  - csv
+  - rdata
+  refresh_frequency: quarterly
+  license_notes: Preserve chemical identifiers, toxicokinetic assumptions, source
+    version, and API URLs.
+  connector: epa_comptox_httk.py
+  parser: json_parser.py
+  entities:
+  - chemical
+  - toxicokinetic_property
+  - in_vitro_context
+  enabled: true
+  source_version: null
+  checksum: null
+  owner_curator: stage1_curator
+  initial_connector_output: Raw source snapshot, parsed epa_comptox_httk metadata
+    records, and ingestion log metrics.
+  first_validation_check: Run the epa_comptox_httk connector for one known compound
+    and verify raw checksum plus at least one parsed record or explicit no-match record.
