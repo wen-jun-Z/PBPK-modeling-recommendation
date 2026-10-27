@@ -2,7 +2,7 @@
 
 ## Streamlit Community Cloud
 
-The English presentation app is self-contained and reads a committed research snapshot. Deploy the private GitHub repository with these settings:
+The English presentation app is deployed at [PBPK Modeling Recommendation](https://pbpk-modeling-recommendation.streamlit.app/). It is self-contained and reads a committed research snapshot. The GitHub repository was made public at the owner's request. Deployment settings:
 
 | Setting | Value |
 |---|---|
@@ -12,9 +12,9 @@ The English presentation app is self-contained and reads a committed research sn
 | Python | `3.12` |
 | Dependencies | `cloud/requirements.txt`, beside the entry point |
 | Secrets | None required |
-| Access | Private; keep **Only specific people can view this app** enabled |
+| Access | Currently public: a fresh browser session can access the app without signing in |
 
-In [Streamlit Community Cloud](https://share.streamlit.io/), connect the GitHub account, authorize access to this private repository, select **Create app**, and enter the settings above. The GitHub file URL is `https://github.com/wen-jun-Z/PBPK-modeling-recommendation/blob/main/cloud/app.py`. Streamlit account login and repository authorization are separate from GitHub CLI authentication. No Cloud deployment URL is recorded until the application has actually been created. See [official deployment instructions](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy) and [private app settings](https://docs.streamlit.io/deploy/streamlit-community-cloud/share-your-app).
+To recreate the deployment in [Streamlit Community Cloud](https://share.streamlit.io/), connect the GitHub account, select **Create app**, and enter the settings above. The GitHub file URL is `https://github.com/wen-jun-Z/PBPK-modeling-recommendation/blob/main/cloud/app.py`. Streamlit account login is separate from GitHub CLI authentication. For owner-only access, set **App settings → Sharing → Who can view this app → Only specific people can view this app**, without inviting other viewers. Repository visibility and app access are separate settings; a public repository does not require a public app. The agent has not changed account-level sharing settings. See [official deployment instructions](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy) and [private app settings](https://docs.streamlit.io/deploy/streamlit-community-cloud/share-your-app).
 
 The app contains Overview, Compounds & evidence, Public models, Recommendations, Blueprint design, and Knowledge graph. The snapshot contains 3,266 evidence records covering 100 compounds, 280 versions from 202 model families, 32 saved component scenarios, five saved model recommendations, and 30 executable blueprint cases. The five model-recommendation records all concern midazolam; they are saved results, not new inference for arbitrary requests. There are 2,787 verified direct evidence-source links; missing links are reported rather than inferred from bulk-download URLs.
 
@@ -39,7 +39,9 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src:. OPENBLAS_NUM_THREADS=1 OMP_NUM_THREAD
 
 Verification on 2026-10-27: all 16 Cloud checks passed, including all 30 saved blueprint curves and dose-response recalculation. Seven real-browser checks covered the six pages, evidence source navigation, model and component filtering, prediction CSV download, graph rendering, and mobile layout, with no JavaScript errors. An isolated release containing only Git-tracked files also passed the Cloud checks; no server data directory or database was required.
 
-`pytest` is a development dependency and is not required by the deployed app. Local browser smoke tests use a temporary authenticated loopback preview and stop their own process afterward. Preview access uses a randomly generated code held only in memory; Community Cloud uses its own private-app authentication. The private server workspace and evidence-processing jobs are independent of this deployment.
+Live Community Cloud verification, 2026-10-27: seven browser checks passed across all six pages in a fresh anonymous session. Caffeine filtering returned 134 evidence records; midazolam search returned 25 related model versions. Saved recommendations displayed concrete components, parameters, and verified source URLs. Changing Caffeine from 222 to 266.4 mg recalculated the curve and produced a CSV with 1,101 finite concentration points. The graph and 390-pixel mobile layout passed, with no JavaScript exceptions. The app-frame health endpoint returned `200 ok`. Results and screenshots are retained locally in `runtime/cloud-preview/cloud_live_check.json` and `live_*.png`. Anonymous access confirms that app privacy is not yet enabled.
+
+`pytest` is a development dependency and is not required by the deployed app. Local browser smoke tests use a temporary authenticated loopback preview and stop their own process afterward. Preview access uses a randomly generated code held only in memory; Community Cloud access is controlled by the platform's Sharing settings; the current deployment is public. The private server workspace and evidence-processing jobs are independent of this deployment.
 
 ## Current private server workspace (2026-10-22)
 
