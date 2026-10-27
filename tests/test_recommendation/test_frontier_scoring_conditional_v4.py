@@ -7,6 +7,8 @@ import sys
 
 import pytest
 
+from frozen_frontier_sources import historical_sha
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 v = importlib.import_module("run_frontier_scoring_conditional_v4")
 
@@ -251,8 +253,8 @@ def test_frozen_amendment_and_parent_code_are_unchanged():
     amendment = v.verify_amendment()
     assert amendment["selection_timing"]["observed_qwen_v3_cases"] == 0
     assert amendment["validation_interpretation"] == v.REGRESSION_DISCLOSURE
-    assert v.base.file_sha(v.ROOT / "scripts/run_frontier_scoring_v3.py") == "f389c9093640325320f5ed7306fd0151f87f88506878bbb5dda1e45d909cc2f2"
-    assert v.base.file_sha(v.ROOT / "scripts/run_frontier_scoring_selected_v3.py") == "b05a4c7f0c13281db70ff7261e6bc049dc82736bbcf45ad065fdee8b16ec58d0"
+    assert historical_sha("run_frontier_scoring_v3.py") == "f389c9093640325320f5ed7306fd0151f87f88506878bbb5dda1e45d909cc2f2"
+    assert historical_sha("run_frontier_scoring_selected_v3.py") == "b05a4c7f0c13281db70ff7261e6bc049dc82736bbcf45ad065fdee8b16ec58d0"
 
 
 @pytest.fixture

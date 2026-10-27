@@ -118,7 +118,7 @@ def publish_summary():
     first, last = f"<!-- reasoned-{reasoned.PROFILE}:start -->", f"<!-- reasoned-{reasoned.PROFILE}:end -->"
     start, end = text.index(first), text.index(last) + len(last)
     block = text[start:end].replace("scripts/run_frontier_scoring_reasoned.py", "scripts/run_frontier_scoring_fast.py")
-    block = block.replace("提示词保持 v5", "Qwen 使用隔离的 causal-conv1d 加速环境；Phi 环境不变。提示词保持 v5")
+    block = block.replace("Prompts remain v5", "Qwen uses an isolated causal-conv1d acceleration environment; Phi is unchanged. Prompts remain v5")
     path.write_text(text[:start] + block + text[end:])
 
 

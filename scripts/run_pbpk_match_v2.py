@@ -144,7 +144,7 @@ def run(args):
 def start(args):
     RUNTIME.mkdir(parents=True, exist_ok=True)
     if active():
-        print('PBPK-Match v2 已运行：PID', active()['pid'])
+        print('PBPK-Match v2 Already running: PID', active()['pid'])
         return
     (RUNTIME / 'stop.requested').unlink(missing_ok=True)
     environment = os.environ.copy()
@@ -159,8 +159,8 @@ def start(args):
     time.sleep(.5)
     if child.poll() is not None:
         raise SystemExit('Worker exited at launch; inspect project launcher.log/worker.log')
-    print(f'PBPK-Match v2 已启动，PID {child.pid}；SSH 断开后继续。')
-    print('进度：runtime/app-env/bin/python -B scripts/run_pbpk_match_v2.py watch')
+    print(f'PBPK-Match v2 Started, PID {child.pid}; Continues after SSH disconnects.')
+    print('Progress: runtime/app-env/bin/python -B scripts/run_pbpk_match_v2.py watch')
 
 
 def display():
@@ -172,25 +172,25 @@ def display():
         fraction = min(done / max(total, 1), 1.)
         filled = round(32 * fraction)
         return f'┃{"█" * filled}{"░" * (32 - filled)}┃ {done:>3}/{total:<3} {fraction:6.1%}'
-    rows = ['PBPK-Match v2  ·  内部分组验证',
-            f'进程：{"运行中 PID " + str(worker["pid"]) if worker else "未运行"}    阶段：{state.get("phase", "未启动")}',
-            f'冻结对照  {bar(external, 9)}', f'分组拟合  {bar(jobs, 300)}',
-            f'当前：{state.get("method", "—")}  seed={state.get("seed", "—")}  fold={state.get("fold", "—")}']
+    rows = ['PBPK-Match v2  ·  Internal grouped validation',
+            f'Process: {"Running PID " + str(worker["pid"]) if worker else "Not running"}    Stage: {state.get("phase", "Not started")}',
+            f'Frozen controls  {bar(external, 9)}', f'Grouped fits  {bar(jobs, 300)}',
+            f'Current: {state.get("method", "—")}  seed={state.get("seed", "—")}  fold={state.get("fold", "—")}']
     if state.get('phase') == 'external_inference':
         total = state.get('completed_rows', 0) + state.get('remaining_rows', 0)
-        rows.append(f'推理续跑  {bar(state.get("completed_rows", 0), total)}  batch={state.get("batch_size")}')
+        rows.append(f'Resumed inference  {bar(state.get("completed_rows", 0), total)}  batch={state.get("batch_size")}')
     progress = state.get('training_progress', {})
     if 'training' in state.get('phase', ''):
         if 'completed_queries' in progress:
-            rows.append('查询进度  ' + bar(progress['completed_queries'], progress['total_queries']) + '  ' + progress['stage'])
+            rows.append('Query progress  ' + bar(progress['completed_queries'], progress['total_queries']) + '  ' + progress['stage'])
         elif 'pairs_this_epoch' in progress:
-            rows.append('本轮样本  ' + bar(progress['pairs_this_epoch'], state.get('training_pairs_per_epoch', 0)))
+            rows.append('Samples this epoch  ' + bar(progress['pairs_this_epoch'], state.get('training_pairs_per_epoch', 0)))
         rows.append(f'epoch {progress.get("epoch", "—")}/{state.get("maximum_epochs", "—")}  '
-                    f'已用 {progress.get("elapsed_seconds", 0) / 60:.1f} min')
+                    f'Elapsed {progress.get("elapsed_seconds", 0) / 60:.1f} min')
     if state.get('error'):
-        rows.append('失败原因：' + state['error'])
-    rows += [f'更新时间：{state.get("updated_at", "—")}', '日志：runtime/deployment/pbpk_match_v2/worker.log',
-             'Ctrl+C 只关闭进度显示，不停止实验。']
+        rows.append('Failure reason: ' + state['error'])
+    rows += [f'Updated: {state.get("updated_at", "—")}', 'Log: runtime/deployment/pbpk_match_v2/worker.log',
+             'Ctrl+C closes the display without stopping experiments.']
     return '\n'.join(rows)
 
 
@@ -208,7 +208,7 @@ def main():
         parser.error('Training requires batch size >= 2')
     if args.action == 'prepare':
         data = prepare()
-        print(f'数据验证通过：{len(data["query_records"])} 请求 × {len(data["candidate_records"])} 候选')
+        print(f'Data validation passed: {len(data["query_records"])} queries x {len(data["candidate_records"])} candidates')
     elif args.action == 'start':
         start(args)
     elif args.action == 'run':
@@ -216,9 +216,9 @@ def main():
     elif args.action == 'stop':
         if active():
             (RUNTIME / 'stop.requested').write_text('User requested project stop\n')
-            print('已请求在下一进度检查点停止；已有断点保留。')
+            print('Stop requested at the next progress checkpoint; saved checkpoints are retained.')
         else:
-            print('PBPK-Match v2 未运行。')
+            print('PBPK-Match v2 Not running. ')
     elif args.action == 'status':
         print(display())
     elif args.action == 'summarize':

@@ -65,7 +65,7 @@ def test_large_legal_json_uses_compact_without_losing_fields(writer, tmp_path):
 
 
 def test_small_json_preserves_pretty_format_values_and_fsync(writer, tmp_path, monkeypatch):
-    value = {'unicode': '中文 µ', 'nested': [None, True, False, {'integer': 2**75}],
+    value = {'unicode': '\u4e2d\u6587 µ', 'nested': [None, True, False, {'integer': 2**75}],
              'numbers': [-0.0, 1.2345678901234567, 1e-250]}
     destination = tmp_path / 'small.json'
     expected = (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + '\n').encode()

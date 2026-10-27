@@ -317,10 +317,10 @@ class Monitor:
         alerts = []
         pipeline_alive, worker_alive = process_alive(pipeline), process_alive(worker)
         if pipeline.get("state") in {"running", "waiting_for_source_review"} and not pipeline_alive:
-            alerts.append("调度进程已退出，状态文件仍是旧状态；当前没有继续运行")
+            alerts.append("Scheduler exited while the state file remained stale; the run is not continuing")
         for name, stat in stats.items():
             if stat["duplicates"] or stat["malformed_or_mismatched"]:
-                alerts.append(f"{name}: 重复{stat['duplicates']}条、格式/协议/范围异常{stat['malformed_or_mismatched']}条（均未重复计数）")
+                alerts.append(f"{name}: duplicates: {stat['duplicates']} records, format/protocol/scope anomalies: {stat['malformed_or_mismatched']} records (not counted twice)")
         for value in (pipeline, worker):
             for field in ("guard_reason", "error_message"):
                 if value.get(field):
@@ -406,8 +406,8 @@ class Throughput:
         if identity != self.identity or not active:
             self.identity, self.samples = identity, deque()
         if not active:
-            note = {"verifying_weights": "校验本地权重", "loading_gpu": "加载模型到GPU",
-                    "replaying": "复查原始回答", "complete": "当前阶段完成"}.get(worker.get("state"), "等待评分")
+            note = {"verifying_weights": "Verifying local weights", "loading_gpu": "Loading model on GPU",
+                    "replaying": "Reviewing original responses", "complete": "Current stage complete"}.get(worker.get("state"), "Waiting for scoring")
             return {"rate": None, "eta": None, "note": note}
         repaired_pilot = bool(snapshot.get("repair")) and phase in {"qwen", "phi"}
         count = snapshot["phases"][phase].get("new_gpu_generations", 0) if repaired_pilot else snapshot["phases"][phase]["done"]
@@ -419,15 +419,15 @@ class Throughput:
             self.samples.popleft()
         age = seconds_since(worker.get("last_commit_at"))
         if age is not None and age >= 1200:
-            return {"rate": None, "eta": None, "note": "提交停滞"}
+            return {"rate": None, "eta": None, "note": "Commit progress stalled"}
         changes = sum(b[1] > a[1] for a, b in zip(self.samples, list(self.samples)[1:]))
         elapsed = now - self.samples[0][0]
         if elapsed < 60 or changes < 2:
-            return {"rate": None, "eta": None, "note": "采样中"}
+            return {"rate": None, "eta": None, "note": "Collecting timing samples"}
         rate = (count - self.samples[0][1]) / elapsed
         remaining = snapshot["phases"][phase]["total"] - count
         return {"rate": rate, "eta": remaining / rate if rate > 0 and not repaired_pilot else None,
-                "note": "仅新GPU纠错调用；复用不计速度" if repaired_pilot else "近15分钟观测"}
+                "note": "New GPU correction calls only; reused outputs excluded from throughput" if repaired_pilot else "Observed over the last 15 minutes"}
 
 
 def render(s, *, color=False, width=96, height=None, throughput=None, interval=5):
@@ -468,9 +468,9 @@ def render(s, *, color=False, width=96, height=None, throughput=None, interval=5
         subtitle += "  ·  " + s["repair"]["profile"]
     lines = [heading, paint(subtitle, "muted"),
              paint("─" * width, "muted"), progress("TOTAL", s["done"], s["total"], "purple"), ""]
-    labels = {"qwen": "Qwen 验证", "phi": "Phi 验证", "primary": "正式主评分", "secondary": "Phi 复判"}
+    labels = {"qwen": "Qwen validation", "phi": "Phi validation", "primary": "Primary scoring", "secondary": "Phi repeat judgment"}
     if s.get("repair"):
-        labels.update(qwen="Qwen 修复复查", phi="Phi 修复复查")
+        labels.update(qwen="Qwen repair review", phi="Phi repair review")
     short = {"qwen": "Qwen", "phi": "Phi", "primary": "Primary", "secondary": "Review"}
     for index, (name, label) in enumerate(labels.items(), 1):
         p = s["phases"][name]
@@ -479,17 +479,17 @@ def render(s, *, color=False, width=96, height=None, throughput=None, interval=5
         row_label = marker + " " + (short[name] if narrow else f"{index:02} {label}")
         lines.append(progress(row_label, p["done"], p["total"], "cyan" if current else "green" if p["done"] == p["total"] else "muted"))
     lines += ["", paint("─" * width, "muted")]
-    metrics = throughput or {"rate": None, "eta": None, "note": "采样中"}
+    metrics = throughput or {"rate": None, "eta": None, "note": "Collecting timing samples"}
     elapsed = duration(seconds_since(pipeline.get("started_at")))
-    rate = f"{metrics['rate']:.3f} 条/s" if metrics["rate"] is not None else "-- 条/s"
+    rate = f"{metrics['rate']:.3f} records/s" if metrics["rate"] is not None else "-- records/s"
     eta = "~" + duration(metrics["eta"]) if metrics["eta"] is not None else "--:--:--"
     if phase:
         model = "Qwen3.6-27B" if phase in {"qwen", "primary"} else "Phi-4"
         lines.append(paint(model, "cyan") + "  " + labels[phase] + paint("  ·  " + metrics["note"], "muted"))
     elif pipeline.get("stage") == "source_review":
-        lines.append(paint("等待原文审核", "amber"))
+        lines.append(paint("Waiting for source review", "amber"))
     elif pipeline.get("stage") == "final_evaluation":
-        lines.append(paint("正在汇总质量指标", "cyan"))
+        lines.append(paint("Aggregating quality metrics", "cyan"))
     timing = f"elapsed {elapsed}  |  {rate}  |  ETA(stage) {eta}"
     if narrow:
         lines += [f"elapsed {elapsed}  |  {rate}", f"ETA(stage) {eta}  ·  {metrics['note']}"]
@@ -509,22 +509,22 @@ def render(s, *, color=False, width=96, height=None, throughput=None, interval=5
     lines.append(f"last commit {age} ago  |  scheduler {live}  worker {gpu_worker}")
     review = paint("PASS", "green") if s["review_accepted"] else paint("PENDING", "amber")
     evaluated = paint("DONE", "green") if s["evaluation_complete"] else paint("PENDING", "muted")
-    gates = f"原文审核 {s['reviewed']}/{s['review_total']} {review}  ·  指标汇总 {evaluated}"
+    gates = f"Source review {s['reviewed']}/{s['review_total']} {review}  ·  Metric aggregation {evaluated}"
     lines += [gates,
               paint("─" * width, "muted")]
     if s.get("repair"):
         repair = s["repair"]
-        lines.append(paint(f"派生复查 {repair['derived_records']:,}/1,530 · 原输出复用 {repair['reused_without_new_generation']:,}", "purple"))
+        lines.append(paint(f"Derived review {repair['derived_records']:,}/1,530 · Original output reuse {repair['reused_without_new_generation']:,}", "purple"))
         pending = repair.get("pending_additional_repairs")
-        kind = {"ordinary": "常规纠错", "focused": "聚焦纠错"}.get(repair.get("repair_kind"), "等待纠错")
-        lines.append(paint(f"新GPU纠错 {repair['new_gpu_generations']:,} 次 · 复用旧纠错 {repair.get('reused_gpu_generations', 0):,} 次", "muted"))
-        lines.append(paint(f"待处理 {pending if pending is not None else '--'} 条 · {kind}", "muted"))
+        kind = {"ordinary": "Standard correction", "focused": "Focused correction"}.get(repair.get("repair_kind"), "Waiting for correction")
+        lines.append(paint(f"New GPU corrections {repair['new_gpu_generations']:,} times · Reused corrections {repair.get('reused_gpu_generations', 0):,} times", "muted"))
+        lines.append(paint(f"Pending {pending if pending is not None else '--'} records · {kind}", "muted"))
     if s["alerts"]:
         lines.extend(paint("! " + alert, "red") for alert in s["alerts"])
     if s["pending_tail_bytes"]:
-        lines.append(paint("等待文件末尾写完后计数。", "amber"))
-    lines += [paint("条目进度 ≠ 耗时进度；ETA仅粗估当前阶段，采样不足时留空。", "muted"),
-              paint(f"{s['at'][11:19]} UTC  ·  refresh {interval:g}s  ·  Ctrl+C 仅关闭显示", "muted")]
+        lines.append(paint("Waiting for the final record to finish writing before counting.", "amber"))
+    lines += [paint("Record progress is not elapsed-time progress; ETA is a rough estimate for the current stage and remains blank without enough timing samples.", "muted"),
+              paint(f"{s['at'][11:19]} UTC  ·  refresh {interval:g}s  ·  Ctrl+C closes the display only", "muted")]
     if height is not None and len(lines) > max(1, height):
         compact = [heading, progress("TOTAL", s["done"], s["total"], "purple")]
         if phase:
@@ -532,10 +532,10 @@ def render(s, *, color=False, width=96, height=None, throughput=None, interval=5
             compact.append(progress(short[phase], p["done"], p["total"]))
         if s.get("repair"):
             repair = s["repair"]
-            compact.append(f"复查 {repair['derived_records']}/1530 · 新GPU纠错 {repair['new_gpu_generations']} 次")
+            compact.append(f"Review {repair['derived_records']}/1530 · New GPU corrections {repair['new_gpu_generations']} times")
         compact.extend(paint("! " + a, "red") for a in s["alerts"][:1])
-        compact += [gates, timing, paint("条目进度≠耗时；ETA仅当前阶段", "muted"),
-                    paint("Ctrl+C 仅关闭显示", "muted")]
+        compact += [gates, timing, paint("Record progress differs from elapsed time; ETA covers this stage only", "muted"),
+                    paint("Ctrl+C closes the display only", "muted")]
         lines = compact[:max(1, height)]
     return "\n".join(fit(line, width) for line in lines)
 
@@ -570,7 +570,7 @@ def main():
                     height=terminal_size.lines - 1 if interactive else None,
                     throughput=throughput.update(snapshot), interval=args.interval)
             except (OSError, ValueError, KeyError) as error:
-                output = "暂时无法读取完整进度，将重试：" + str(error)
+                output = "Cannot read complete progress yet; retrying: " + str(error)
                 if not interactive:
                     print(output, file=sys.stderr)
                     return 1
@@ -584,12 +584,12 @@ def main():
     except KeyboardInterrupt:
         return 0
     except (OSError, ValueError, KeyError) as error:
-        print("无法读取本轮实验进度：" + str(error), file=sys.stderr)
+        print("Cannot read progress for this experiment: " + str(error), file=sys.stderr)
         return 1
     finally:
         if screen_open:
             print("\033[?25h\033[?1049l", end="", flush=True)
-            print("已退出进度显示；后台实验继续。")
+            print("Progress display closed; background experiments continue.")
 
 
 if __name__ == "__main__":

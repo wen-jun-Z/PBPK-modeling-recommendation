@@ -36,26 +36,26 @@ MIB = 1024 ** 2
 INPUTS = {drug: ROOT / 'experiments/blueprint_design/development_inputs/mechanisms_20260920' / drug / 'input_package.json'
           for drug in ('alprazolam', 'midazolam')}
 GROUPS = (
-    ('source_fixed', '重建模板固定参数', 'source', 'fixed', 'fit_priority'),
-    ('source_calibrated', '重建模板＋一个清除参数校准', 'source', 'estimate', 'fit_priority'),
-    ('equal_search', '原有限比较：候选等额预算', 'compare_registered', 'auto', 'equal'),
-    ('fit_priority_search', '改进有限比较：优先分配拟合预算', 'compare_registered', 'auto', 'fit_priority'),
+    ('source_fixed', 'Rebuilt template with fixed parameters', 'source', 'fixed', 'fit_priority'),
+    ('source_calibrated', 'Rebuilt template + one calibrated clearance parameter', 'source', 'estimate', 'fit_priority'),
+    ('equal_search', 'Original bounded comparison: equal candidate budgets', 'compare_registered', 'auto', 'equal'),
+    ('fit_priority_search', 'Improved bounded comparison: fitting-priority budgets', 'compare_registered', 'auto', 'fit_priority'),
 )
 PURPOSE_GROUPS = (
-    ('source_fixed', '来源公式＋登记固定参数', 'source', 'fixed', 'fit_priority', None),
-    ('coordinate_control', '相同候选：旧坐标搜索', 'compare_registered', 'auto', 'fit_priority', 'coordinate'),
-    ('residual_design', '相同候选：新残差联合优化', 'compare_registered', 'auto', 'fit_priority', None),
+    ('source_fixed', 'Source formula + registered fixed parameters', 'source', 'fixed', 'fit_priority', None),
+    ('coordinate_control', 'Same candidates: old coordinate search', 'compare_registered', 'auto', 'fit_priority', 'coordinate'),
+    ('residual_design', 'Same candidates: new joint residual optimization', 'compare_registered', 'auto', 'fit_priority', None),
 )
 STUDY_GROUPS = (
-    ('source_fixed', '来源公式＋登记固定参数', 'source', 'fixed', 'fit_priority', None),
-    ('residual_control', '原残差优化对照', 'compare_registered', 'auto', 'fit_priority', None),
-    ('screened_control', '筛选起点残差优化', 'compare_registered', 'auto', 'fit_priority', 'screened_residual'),
-    ('study_consistent', '筛选起点＋逐研究保护', 'compare_registered', 'auto', 'fit_priority', None),
+    ('source_fixed', 'Source formula + registered fixed parameters', 'source', 'fixed', 'fit_priority', None),
+    ('residual_control', 'Original residual-optimization control', 'compare_registered', 'auto', 'fit_priority', None),
+    ('screened_control', 'Residual optimization with screened starts', 'compare_registered', 'auto', 'fit_priority', 'screened_residual'),
+    ('study_consistent', 'Screened starts + per-study protection', 'compare_registered', 'auto', 'fit_priority', None),
 )
 STUDY_COMPARISONS = (
-    ('study_consistent', 'residual_control', '完整改进相对原算法'),
-    ('screened_control', 'residual_control', '仅改变起点筛选'),
-    ('study_consistent', 'screened_control', '仅增加逐研究保护'),
+    ('study_consistent', 'residual_control', 'Full revision versus original algorithm'),
+    ('screened_control', 'residual_control', 'Start screening only'),
+    ('study_consistent', 'screened_control', 'Per-study protection only'),
 )
 
 
@@ -224,7 +224,7 @@ def matched_comparisons(summary, protocol):
     if protocol == 'study_v4':
         pairs = STUDY_COMPARISONS
     elif protocol == 'purpose_v3':
-        pairs = (('residual_design', 'coordinate_control', '残差联合优化相对坐标搜索'),)
+        pairs = (('residual_design', 'coordinate_control', 'Joint residual optimization versus coordinate search'),)
     else:
         return []
     comparisons = []
@@ -566,35 +566,35 @@ def main(argv=None):
         def cell(value):
             return '—' if value is None else f'{value:.3f}'
         if args.protocol == 'study_v4':
-            protocol_description = ('这是已查看历史研究上的开发回归，不是无偏交叉验证。三个搜索组共用完整请求、候选、参数、目标、给药和预算；'
-                '先比较起点筛选，再单独比较逐研究保护。来源固定组仅作为基线。')
+            protocol_description = ('This is development regression on previously inspected historical studies, not unbiased cross-validation. All three search groups share complete requests, candidates, parameters, targets, dosing, and budgets. '
+                'Start screening is compared first, then per-study protection separately. The fixed-source group is a baseline only.')
         elif args.protocol == 'purpose_v3':
-            protocol_description = ('这是已查看历史研究上的开发回归。优化器对照共用候选、参数范围、预算、诊断和选模规则；'
-                '坐标搜索额外包含边界内起点，残差方法从登记初值联合更新。')
+            protocol_description = ('This is development regression on previously inspected historical studies. Optimizer controls share candidates, parameter bounds, budgets, diagnostics, and selection rules. '
+                'Coordinate search also includes in-bound starting points; the residual method jointly updates from registered initial values.')
         else:
-            protocol_description = '这是历史 v1/v2 对照，固定基线为重建模板。'
-        lines = ['# 两药蓝图设计小规模评估', '',
-            f'{len(groups)} 个方法×{len(bundles)} 种药物，共 {len(groups)*len(bundles)} 次设计、'
-            f'{len(groups)*sum(len(bundle["external_scenarios"]) for bundle in bundles.values())} 条登记预测。'
-            '各组单独拟合，全部预测锁定后才读取专用留出答案文件；失败保留，不使用回退结果。', '',
+            protocol_description = 'This is the historical v1/v2 comparison, with a rebuilt-template fixed baseline.'
+        lines = ['# Two-drug blueprint-design pilot evaluation', '',
+            f'{len(groups)} methods x {len(bundles)} drugs: {len(groups)*len(bundles)} designs and '
+            f'{len(groups)*sum(len(bundle["external_scenarios"]) for bundle in bundles.values())} registered predictions. '
+            'Each group is fitted separately. Dedicated held-out answer files are read only after all predictions are locked; failures are retained without fallback results.', '',
             protocol_description, '',
-            '| 药物 | 方法 | 拟合 log-RMSE | 选择 log-RMSE | 留出 log-RMSE | AUC 倍数误差 | Cmax 倍数误差 | 有效曲线 | 运行状态 |',
+            '| Drug | Method | Fit log-RMSE | Selection log-RMSE | Held-out log-RMSE | AUC fold error | Cmax fold error | Valid curves | Run status |',
             '|---|---|---:|---:|---:|---:|---:|---:|---|']
         for r in summary:
             values = [cell(r[k]) for k in ('calibration_log_rmse', 'selection_log_rmse', 'heldout_log_rmse', 'auc_fold_error', 'cmax_fold_error')]
             lines.append('| ' + ' | '.join([r['drug'], r['label'], *values,
                 f"{r['scored_curves']}/{r['expected_curves']}", r['design_status']]) + ' |')
-        lines += ['', '| 药物 | 方法 | 设计求解调用（逻辑/实际） | 设计耗时（秒） | 交付 |',
+        lines += ['', '| Drug | Method | Design solver calls (logical/physical) | Design time (seconds) | Delivery |',
                   '|---|---|---:|---:|---|']
         for row in summary:
             counts = (row['design_budget'] or {}).get('totals', {})
             lines.append('| ' + ' | '.join([row['drug'], row['label'],
                 f"{counts.get('logical_calls', '—')}/{counts.get('physical_calls', '—')}",
-                cell(row['design_wall_seconds']), '成功' if row['design_delivery_complete'] else '失败']) + ' |')
+                cell(row['design_wall_seconds']), 'Success' if row['design_delivery_complete'] else 'Failure']) + ' |')
         if args.protocol in {'purpose_v3', 'study_v4'}:
             comparisons = matched_comparisons(summary, args.protocol)
-            lines += ['', '各项误差差值（改进组−对照组，负数更好），分别报告，不加权成总分：', '',
-                      '| 药物 | 对比 | 曲线 log-RMSE 差值 | AUC 倍数误差差值 | Cmax 倍数误差差值 |',
+            lines += ['', 'Error differences (revised minus control; negative is better) are reported separately without a weighted total:', '',
+                      '| Drug | Comparison | Curve log-RMSE difference | AUC fold-error difference | Cmax fold-error difference |',
                       '|---|---|---:|---:|---:|']
             for comparison in comparisons:
                 delta = comparison['difference_new_minus_control']
@@ -605,13 +605,13 @@ def main(argv=None):
                 'unbiased_cross_validation': False,
                 'weighted_aggregate_score': None})
         if args.protocol == 'study_v4':
-            lines += ['', '逐研究保护检查拟合集和开发选择集各研究的主指标，阻止平均分改善掩盖单项研究退化；'
-                       '是否实际改变选择，须结合 selection_consistency 中的逐候选报告判断。'
-                       '该保护不读取最终留出答案，也不能保证未见研究一定改善。']
-        lines += ['', '误差越小越好；倍数误差以 1 为理想值。AUC 仅覆盖观测时间窗，Cmax 仅指采样点峰值。',
-            '', '这是 2 种已知药物、7 项历史留出研究的开发评估。原模型参数可能已拟合过，不能作为独立新药物验证。',
-            '', '并行运行和原生缓存影响耗时；逻辑调用统一计入预算。拟合轮数、预算截断及全部候选诊断见 summary.json，不把返回有效模型等同于充分收敛。',
-            '', '详细的预算、耗时、失败和预测锁见 summary.json 及各组目录。']
+            lines += ['', 'Per-study protection checks each study in the fitting and development-selection sets so mean improvement does not hide deterioration in individual studies. '
+                       'Whether it changed selection must be established from per-candidate selection_consistency reports. '
+                       'This protection does not read final held-out answers and cannot guarantee improvement on unseen studies.']
+        lines += ['', 'Lower error is better; ideal fold error is 1. AUC covers only the observation window and Cmax is the sampled peak.',
+            '', 'This is development evaluation on two known drugs and seven historical held-out studies. Original model parameters may already have been fitted; this is not independent new-drug validation.',
+            '', 'Parallel execution and native caching affect runtime; logical calls count uniformly toward the budget. Fit rounds, budget truncation, and all candidate diagnostics are in summary.json. Returning a valid model does not establish full convergence.',
+            '', 'Detailed budgets, times, failures, and prediction locks are in summary.json and each group directory.']
         (output / 'README.md').write_text('\n'.join(lines) + '\n')
         guard(native=False)
         status = 'completed' if all(r['heldout_complete'] for r in summary) else 'completed_with_failures'

@@ -459,18 +459,18 @@ def validate_prediction_lock(p, state):
 
 
 def write_report(r):
-    lines=['# 30药采样决策扩展验证','','原十药评分器固定后，在新增20药上评价；新增药物的误差不用于训练、选特征或调正则。旧十药使用原留出结果。人体PBPK底座不变；新增20药RF补缺参数排除全部30种结构和骨架。所有资料仍是历史开发资料，不称前瞻盲测。','',
-        '统一主参考为真实临床曲线采样峰值及曲线本身；原文报告标量另外保留。缺失早期或尾部观测时，完整AUC∞、CL、Vz、MRT、Vss的参考留空，预测仍保留。30种药物不等于30个独立临床试验；Finerenone、Montelukast为同研究不同剂量臂。','',
-        '| 范围/方法 | Cmax GMFE | 可评分药物/入组 | 曲线GMFE |','|---|---:|---:|---:|']
+    lines=['# Thirty-drug expansion of sampling-decision evaluation','','The original ten-drug scorer is frozen before evaluation on 20 additional drugs. New-drug errors are not used for training, feature selection, or regularization tuning. Original drugs retain their prior held-out results. Human PBPK is unchanged; RF gap filling for the additional drugs excludes all 30 structures and scaffolds. These remain historical development data, not prospective blinded validation.','',
+        'Common primary references are actual clinical sampled peaks and curves; reported scalar endpoints remain separate. AUC infinity, CL, Vz, MRT, and Vss references remain empty when early or terminal observations are missing, while predictions remain. Thirty drugs are not 30 independent trials; Finerenone and Montelukast use different dose arms of the same study.','',
+        '| Scope/method | Cmax GMFE | Scorable/enrolled drugs | Curve GMFE |','|---|---:|---:|---:|']
     for scope in ('original_ten','added_twenty','all_thirty','added_cross_study','added_within_study'):
         for method in ('learned_gain','time_farthest','c_optimal','uniform_random','no_addition'):
             e=r['summary'][scope]['late_four']['cmax'][method]; ep=e['endpoint']; cv=e['curve']
             fmt=lambda v:'—' if v is None else f'{v:.4f}'
             lines.append(f"| {scope} / {method} | {fmt(ep['estimate'])} | {ep['n_cases']}/{ep['attempted_drugs']} | {fmt(cv['estimate'])} |")
-    c=r['conclusion']; lines+=['',f"主要结论按新增20药：对时间规则误差比{c['primary_error_ratio']}，95%研究聚类区间{c['ci95']}；{c['improved']}药改善、{c['worse']}药退步、{c['complete_pairs']-c['improved']-c['worse']}药相同，{20-c['complete_pairs']}药缺配对。不能用原十药或合并结果替换新增20药结论。",'',
-        '[全部11类预测、参考及误差](endpoints.csv) · [完整结果及失败](results.json) · [冻结协议](protocol.json) · [30药及来源审计](inputs/cohort_manifest.json)','',
+    c=r['conclusion']; lines+=['',f"Primary conclusion uses the additional 20 drugs: error ratio against time coverage {c['primary_error_ratio']}, study-cluster 95% interval {c['ci95']}; {c['improved']} improved, {c['worse']} worsened, {c['complete_pairs']-c['improved']-c['worse']} tied, and {20-c['complete_pairs']} lacked paired results. Original-ten or pooled results cannot replace this conclusion.",'',
+        '[All 11 predictions, references, and errors](endpoints.csv) · [Full results and failures](results.json) · [Frozen protocol](protocol.json) · [30-drug source audit](inputs/cohort_manifest.json)','',
         '```bash','runtime/app-env/bin/python -B scripts/run_sampling_expansion.py status','```','',
-        '接口支持 prepare / run / status / report / cleanup；运行最多14进程，每个原生构建2线程、180秒超时，每20分钟与阶段边界检查本批源哈希和10 GiB限额。未覆盖论文。']
+        'The interface supports prepare / run / status / report / cleanup. At most 14 workers run; each native build uses two threads and a 180-second timeout. Batch source hashes and the 10 GiB limit are checked every 20 minutes and at stage boundaries. The manuscript is not overwritten.']
     (RUN/'README.md').write_text('\n'.join(lines)+'\n')
 
 

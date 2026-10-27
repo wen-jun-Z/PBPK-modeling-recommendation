@@ -196,6 +196,6 @@ def test_summary_replaces_inherited_fresh_and_prompt_claims(setup):
     folder.mkdir(parents=True); (folder / "README.md").write_text("Existing results\n")
     v.configure(); v.publish_summary()
     text = (folder / "README.md").read_text()
-    assert "192条合成控制均为开发回归" in text and "573条原文案例" in text
-    assert "此前未被模型调用" not in text and "提示词保持 v5" not in text
+    assert "All 192 synthetic controls are development regression" in text and "573 source cases" in text
+    assert "not previously submitted to the model" not in text and "Prompts remain v5" not in text
     assert "scripts/run_frontier_scoring_citation_complete.py --profile v8" in text

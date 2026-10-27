@@ -359,16 +359,16 @@ def extended_reports(predictions, data):
 
 def report_text(summary):
     primary = next(row for row in summary["paired_seed_average_quality"]["comparisons"] if row["metric"] == "ndcg@10")
-    lines = ["# 等容量交互结构对照", "", "固定相同文本、204维条件、标签、分组和训练规则；仅比较交互结构与等容量简单拼接。结果为已有开发资料上的内部验证。", "",
-             "| 方法 | 种子 | 已判子集 NDCG@10 | Y-F1 | 敏感度 | 完整列表首位未知 |", "|---|---:|---:|---:|---:|---:|"]
+    lines = ['# Equal-capacity interaction-structure controls', "", 'Text, 204-dimensional conditions, labels, groups, and training rules are fixed; only interaction structure and equal-capacity concatenation are compared. Results are internal validation on existing development data.', "",
+             '| Method | Seed | Judged-subset NDCG@10 | Y-F1 | Sensitivity | Full-list top-1 unknown |', "|---|---:|---:|---:|---:|---:|"]
     for row in summary["quality_rows"]:
         lines.append(f"| {DISPLAY[row['method']]} | {row['seed']} | {row['ndcg@10']:.4f} | {row['positive_f1']:.4f} | {row['sensitivity']:.1%} | {row['top1_unknown']:.1%} |")
     delta, ci, p = primary["mean_group_delta"], primary["bootstrap_95ci"], primary.get("cluster_sign_flip_p")
-    lines += ["", f"主比较先在每条请求内平均三个种子的NDCG，再按药物/研究关联组配对。交互减拼接的组平均差为 {delta:.4f}；95% CI " +
-              (f"[{ci[0]:.4f}, {ci[1]:.4f}]" if ci else "不可估计") + (f"，p={p:.4f}。" if p is not None else "。"),
-              f"该排序结果只涉及 {primary['eligible_queries']}/{primary['total_queries']} 条有已知正例的请求；未知候选仅在这个条件性指标中排除，完整列表统计仍保留。",
-              "", "若区间跨零，不能据此证明方法等效或交互结构更优。多种子结果不等同于新增独立验证数据。",
-              "", "完整输出：`report/summary.json`；逐种子文档指标 `report/quality.csv`；完整列表及分用途 `report/full_list.csv`；11类终点 `report/endpoint_positions.csv`。共同执行场景按两种方法、全部种子都可计分的交集比较；完整覆盖另行保留。两条曲线仍仅为同一研究的案例。"]
+    lines += ["", f"Primary comparison averages three-seed NDCG within each request, then pairs drug/study-related groups. The group-average interaction-minus-concatenation difference is {delta:.4f}; 95% CI " +
+              (f"[{ci[0]:.4f}, {ci[1]:.4f}]" if ci else 'Not estimable') + (f", p={p:.4f}." if p is not None else "."),
+              f"Ranking uses only {primary['eligible_queries']}/{primary['total_queries']} requests with known positives. Unknown candidates are excluded only from this conditional metric; full-list statistics remain.",
+              "", 'An interval crossing zero establishes neither equivalence nor superiority of interaction structure. Multiple seeds do not create independent validation data.',
+              "", 'Full output: report/summary.json; per-seed document metrics: report/quality.csv; full-list and purpose-stratified results: report/full_list.csv; 11 endpoints: report/endpoint_positions.csv. Shared execution scenarios require both methods and all seeds to be scorable; full coverage is reported separately. The two curves remain cases from the same study.']
     return "\n".join(lines) + "\n"
 
 

@@ -645,15 +645,15 @@ def watch():
     try:
         while True:
             s=status();n=s.get('native',{});r=s['ranking'];p=s.get('source_repairs',{})
-            print('\033[2J\033[H'+'PBPK 原模型执行验证 · 修复批次 04\n',end='')
+            print('\033[2J\033[H'+'PBPK original-model execution validation | repair batch 04\n',end='')
             source_running=s.get('source_repair_worker',{}).get('owned_process_alive')
-            label='运行中' if s['owned_process_alive'] else ('源模型修复运行中' if source_running else '已停止')
-            print('状态   '+s['state']+'  |  项目进程 '+label)
-            print('排序   '+bar(r['complete'],r['planned']))
-            print('源模型 '+bar(p.get('completed',0),p.get('planned',81))+'  '+json.dumps(p.get('counts',{}),ensure_ascii=False))
-            print('模拟   '+bar(n.get('completed',0),n.get('planned',177)))
-            print('结果   '+json.dumps(n.get('counts',{}),ensure_ascii=False))
-            print('Ctrl+C 仅退出进度显示，不停止实验。',flush=True)
+            label='Running' if s['owned_process_alive'] else ('Source-model repair running' if source_running else 'Stopped')
+            print('Status '+s['state']+' | Project process '+label)
+            print('Ranking '+bar(r['complete'],r['planned']))
+            print('Source model '+bar(p.get('completed',0),p.get('planned',81))+'  '+json.dumps(p.get('counts',{}),ensure_ascii=False))
+            print('Simulation '+bar(n.get('completed',0),n.get('planned',177)))
+            print('Results '+json.dumps(n.get('counts',{}),ensure_ascii=False))
+            print('Ctrl+C exits the display without stopping experiments.',flush=True)
             time.sleep(5)
     except KeyboardInterrupt:pass
 

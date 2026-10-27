@@ -47,26 +47,26 @@ def main():
         result=batch.report()
         document=batch.read(batch.RUN/'results.json')
         comparisons=document['development_method_choice']['direct_over_fixed_prior']
-        lines=['','## 本轮结论','',
-            '当前有开发曲线分支采用direct_relaxed作为下一轮研发基线：保留人体双区和固定净肾输入，去掉非肾CL的强先验惩罚，扩大数值搜索区间，仍只拟合CL/K/PS三个参数。来源CL仅作初值和倍率参照，原始证据账本不改写。',
-            '这是查看本轮开发结果后的方法选择，不是新盲测确认；没有改动原论文、无本药曲线分支或逐药拼接最优方法。', '',
-            '| 条件 | direct / fixed GMFE比 | 95%研究簇区间 | 改善 / 退步 |','|---|---:|---|---:|']
+        lines=['','## Conclusions from this batch','',
+            'The development-curve branch adopts direct_relaxed as the next development baseline: retain human two-region physiology and fixed net renal inputs, remove the strong nonrenal-CL prior penalty, widen numerical search bounds, and still fit only CL/K/PS. Source CL supplies initialization and multiplier reference only; the original evidence ledger is unchanged.',
+            'This is method selection after inspecting development results, not confirmation by a new blinded test. The original manuscript and no-drug-curve branch are unchanged; methods are not stitched together per drug.', '',
+            '| Condition | direct/fixed GMFE ratio | 95% study-cluster interval | Improved/worsened |','|---|---:|---|---:|']
         for sampling in batch.SAMPLINGS:
             c=comparisons[sampling];lines.append(f'| {sampling} | {c["estimate"]:.4f} | [{c["ci95"][0]:.4f}, {c["ci95"][1]:.4f}] | {c["ratio_below_one"]} / {c["ratio_above_one"]} |')
         lines+=['',
-            '直接放宽CL优于强制开发窗面积相等；后者在Treprostinil的完整/五点GMFE为4.304/4.227，直接校准为2.375/2.264。面积一致不等于目标研究预测准确，不采用该硬约束为主方法。',
-            '改进并非所有药物、所有终点一致获益：Cefepime、Midazolam、Nemonoxacin曲线误差上升；不能把平均改善解释为临床可靠。两室冻结参照总体仍更低，预算不同。',
-            '两种采样的配对区间都跨1。Ertapenem贡献约81%的净log-GMFE改善；仅探索性排除它后，其余九药平均改善约1.9%，区间仍跨1。因此不是已经证明普遍优胜。',
-            '末次浓度仅2药有参考，完整/五点终点GMFE由2.915/3.041退步到3.827/3.173。Remdesivir半衰期仍约6.34/6.42倍并带弱尾标记；其余各终点覆盖和弱尾统计见results.json，不将相关尾部指标视为独立重复证据。',
-            '五点相对完整曲线的GMFE增幅约1.15%，原法约0.97%，未证明少点稳定性进一步提升；减少采样点也不等同于缺CL或fu的证据缺失实验。',
-            '', '## 验收与计算记录','',
-            '60个新单元、120次公式拟合全部得到可用的单元预测；连同40个冻结参照，共100个比较单元、1,100条终点记录。两次单公式无解由另一公式完成，失败原因保留。',
-            '32项工程/报告检查通过。独立算术验收通过：831项文件哈希、1,040个曲线点比较、800个标量误差；2000次研究簇bootstrap、固定肾输入及48项体重迁移检查通过。这里的1,040点/800项包含多方法重复比较，不是独立样本数。',
-            '正式拟合300,161次数学求解；仅开发预检21,999次另计。5组新原生配置按共享缓存首次构建归属，不作为方法速度比较；本轮未发现原生构建失败。reference资源是旧运行记录，非本批新增；并发unit wall_seconds包含等待，不能相加当总运行时长。',
-            '报告曾因重复嵌入稠密预测曲线超过32 MiB上限而中止；仅增加格式适配器，保留原预测文件引用，评分数值、冻结预测和校准代码均未改变。',
-            '', '复算报告：`runtime/app-env/bin/python -B scripts/report_exposure_blueprint.py`。原`run_exposure_blueprint.py`保留冻结代码，用于status、完成状态检查和来源追溯。']
+            'Direct CL relaxation outperformed forced development-window area equality. For Treprostinil, full/five-point GMFE was 4.304/4.227 with the latter versus 2.375/2.264 with direct calibration. Equal area does not establish accurate target-study prediction; this hard constraint is not adopted as the main method.',
+            'Benefits were not uniform across drugs or endpoints: Cefepime, Midazolam, and Nemonoxacin curve errors increased. Mean improvement is not clinical reliability. Frozen two-compartment references remained lower overall, with different budgets.',
+            'Paired intervals for both sampling settings crossed 1. Ertapenem contributed about 81% of net log-GMFE improvement. Exploratory exclusion left about 1.9% mean improvement among nine drugs, still with an interval crossing 1. General superiority is not established.',
+            'Only two drugs had last-concentration references; full/five-point endpoint GMFE worsened from 2.915/3.041 to 3.827/3.173. Remdesivir half-life error remained about 6.34/6.42-fold with weak-tail flags. Other endpoint coverage and weak-tail counts are in results.json; correlated tail metrics are not independent repeated evidence.',
+            'Five-point GMFE exceeded full-curve GMFE by about 1.15%, versus about 0.97% previously. Greater sparse-point stability was not established. Fewer sampling points are not equivalent to missing-CL or missing-fu experiments.',
+            '', '## Verification and compute record','',
+            'All 60 new units and 120 formula fits yielded usable unit predictions. With 40 frozen references, there were 100 comparison units and 1,100 endpoint records. Two individual formulas had no solution and the alternate formula completed the unit; failures remain.',
+            'All 32 engineering/report checks passed. Independent arithmetic checks covered 831 file hashes, 1,040 curve-point comparisons, 800 scalar errors, 2000 study-cluster bootstrap replicates, fixed renal inputs, and 48 weight-transfer checks. The 1,040 points and 800 items include repeated method comparisons, not independent samples.',
+            'Formal fitting used 300,161 mathematical solves; 21,999 development-precheck solves are separate. Five new native configurations are attributed to first shared-cache construction and are not method-speed comparisons; no native-construction failure was found. Reference resources are historical runs, not new work. Concurrent unit wall_seconds includes waiting and cannot be summed as total elapsed time.',
+            'Reporting previously stopped when duplicate dense curves exceeded the 32 MiB limit. Only a format adapter was added, retaining prediction-file references; scores, frozen predictions, and calibration code were unchanged.',
+            '', 'Recalculate with `runtime/app-env/bin/python -B scripts/report_exposure_blueprint.py`. The frozen run_exposure_blueprint.py remains for status, completion checks, and provenance.']
         readme=batch.RUN/'README.md'
-        text=readme.read_text().replace('，`report`重算结果。','；结果复算使用下方紧凑报告入口。')
+        text=readme.read_text().replace('; `report` recalculates results.','; use the compact reporting entry point below for recalculation.')
         readme.write_text(text+'\n'.join(lines)+'\n')
     print(json.dumps(result,ensure_ascii=False,indent=2))
 

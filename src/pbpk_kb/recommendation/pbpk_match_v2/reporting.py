@@ -26,8 +26,8 @@ DISPLAY = {'bm25_text': 'BM25', 'qwen3_embedding_06b': 'Qwen3-Emb 0.6B',
     'f2llm_v2_06b': 'F2LLM v2', 'qwen3_reranker_06b': 'Qwen3-Reranker 0.6B',
     'jina_reranker_v35': 'Jina v3.5', 'bm25_top20_rearank_7b_nf4': 'REARANK',
     'bm25_top20_reasonrank_7b_nf4': 'ReasonRank', 'prorank': 'ProRank', 'contextual': 'Contextual v2',
-    'full': 'PBPK-Match v2', 'no_numeric': '去数值条件', 'frozen_text': '冻结编码器',
-    'mlp': 'MLP', 'lambdamart': 'LambdaMART', 'no_error_branch': '去误差分支'}
+    'full': 'PBPK-Match v2', 'no_numeric': 'No numeric conditions', 'frozen_text': 'Frozen encoder',
+    'mlp': 'MLP', 'lambdamart': 'LambdaMART', 'no_error_branch': 'No error branch'}
 
 
 def percentile_ranks(scores):
@@ -447,19 +447,19 @@ def _paper_tables(reports, variability):
                    r'\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X'
                    r'*{4}{>{\centering\arraybackslash}X}@{}}\toprule')
     table_end = r'\bottomrule\end{tabularx}\end{center}'
-    document = [r'\paragraph{分组内部验证。}以下结果使用已有资料；文档支持标签与实际药代误差分别评价。'
-                r'训练方法列出三个随机种子的均值与样本标准差，集成按查询内并列百分位名次等权平均；外部方法不伪造种子波动。',
-                r'两列NDCG均取前10位；单次为种子均值$\pm$标准差，其余列为集成或外部方法。', table_start,
-                r'方法 & NDCG单次 & NDCG集成 & Recall@10 & MRR \\ \midrule']
-    execution = [r'\paragraph{精确名次与覆盖。}下表仅报告普通 Cmax；AUC 各观察窗和曲线端点在导出结果中分别保留。'
-                 r'每格为覆盖率/条件 GMFE；第2、3位不递补、不取前三中最优，精确同分组均匀计算。'
-                 r'覆盖不同的条件误差不能直接解释为整体优劣。参考个体与研究人群的数值比较不构成直接复用标签。',
-                 r'单次列为第1位GMFE的种子均值$\pm$标准差。', table_start,
-                 r'方法 & 单次GMFE & 第1位 & 第2位 & 第3位 \\ \midrule']
-    stability = [r'\paragraph{稳定性。}重排句序衡量表述不变性，移除证据衡量敏感性，二者均不能代替推荐正确性。'
-                 r'下列 Jaccard 使用完整首位并列集合；不会按模型编号打破并列。',
-                 r'单次列为句序重排Jaccard的种子均值$\pm$标准差。', table_start,
-                 r'方法 & 单次重排 & 重排 & 缺证据 & 并列率 \\ \midrule']
+    document = ['\\paragraph{Grouped internal validation.} Results use existing data; documentary support and actual PK errors are evaluated separately. '
+                'Trained methods report three-seed means and sample standard deviations; ensembles average tied percentile ranks equally within each query. External methods do not have fabricated seed variation. ',
+                'Both NDCG columns use the first ten positions. Single-run values are seed mean $\\pm$ standard deviation; other columns are ensemble or external-method results.', table_start,
+                'Method & Single-run NDCG & Ensemble NDCG & Recall@10 & MRR \\\\ \\midrule']
+    execution = ['\\paragraph{Exact positions and coverage.} The table reports ordinary Cmax only; different AUC windows and curve endpoints remain separate in exports. '
+                 'Each cell is coverage/conditional GMFE. Positions 2 and 3 are not backfilled or replaced by the best of three; exact ties receive uniform weights. '
+                 'Conditional errors at different coverage do not establish overall superiority. Numerical comparisons between a reference individual and a study population do not provide direct-reuse labels. ',
+                 'The single-run column is the seed mean $\\pm$ standard deviation of position-1 GMFE.', table_start,
+                 'Method & Single-run GMFE & Position 1 & Position 2 & Position 3 \\\\ \\midrule']
+    stability = ['\\paragraph{Stability.} Sentence reordering tests wording invariance; evidence removal tests sensitivity. Neither substitutes for recommendation correctness. '
+                 'Jaccard uses complete top-tie sets without breaking ties by model identifier. ',
+                 'The single-run column is seed mean $\\pm$ standard deviation of sentence-reordering Jaccard.', table_start,
+                 'Method & Single-run reorder & Reordered & Missing evidence & Tie rate \\\\ \\midrule']
     for method, report in reports.items():
         q = report['quality']['judged_only']['metrics']; name = esc(DISPLAY.get(method, method))
         document.append(' & '.join([name, seeds(method, 'quality.judged_only.metrics.ndcg@10'),
@@ -480,22 +480,22 @@ def _paper_tables(reports, variability):
         full = reports['full']; quality = full['quality']
         if quality['applicability'].get('per_class_f1', {}).get('Y') is not None:
             endings['paper_document.tex'].append(
-                'PBPK-Match v2集成的适用类F1为' + number(quality['applicability']['per_class_f1']['Y']) +
-                '，首位未知等级比例为' + number(quality['coverage']['full_catalog_top1_unknown_rate']) +
-                '；Y/N已知对上的Brier为' + number(quality['applicability']['brier']) +
-                '。这些结果衡量与文档标签的一致性，不能替代药代预测验证。')
+                'PBPK-Match v2 ensemble applicable-class F1 is ' + number(quality['applicability']['per_class_f1']['Y']) +
+                ', top-1 unknown-grade fraction is ' + number(quality['coverage']['full_catalog_top1_unknown_rate']) +
+                '; Brier on known Y/N pairs is ' + number(quality['applicability']['brier']) +
+                '. These measure agreement with document labels, not PK predictive validation.')
         common = next((row for row in full['execution'].get('common_positions', [])
                        if row['endpoint'] == 'Cmax_reference_vs_group'), None)
         if common and common['scenarios']:
             endings['paper_execution.tex'].append(
-                f"PBPK-Match v2在三个位置均可计分的{common['scenarios']}个共同场景中，"
-                '第1、2、3位GMFE分别为' + '、'.join(number(common[f'rank{i}_gmfe']) for i in (1,2,3)) +
-                '。这是共同子集内的描述性比较，不构成未校正的优胜结论。')
+                f"On {common['scenarios']} common PBPK-Match v2 scenarios scorable at all three positions, "
+                'position-1/2/3 GMFE values are ' + ', '.join(number(common[f'rank{i}_gmfe']) for i in (1,2,3)) +
+                '. This is a descriptive shared-subset comparison, not an unadjusted superiority conclusion.')
         stability_full = full['stability']
         endings['paper_stability.tex'].append(
-            'PBPK-Match v2集成在句序重排后的首位集合Jaccard为' + number(stability_full['reordered']['top1_set_jaccard']) +
-            '，移除证据后为' + number(stability_full['missing_evidence']['top1_set_jaccard']) +
-            '；原请求的首位并列比例为' + number(stability_full['top1_tie_fraction']) + '。')
+            'PBPK-Match v2 ensemble top-set Jaccard after sentence reordering is ' + number(stability_full['reordered']['top1_set_jaccard']) +
+            ', and after evidence removal is ' + number(stability_full['missing_evidence']['top1_set_jaccard']) +
+            '; original-request top-tie fraction is ' + number(stability_full['top1_tie_fraction']) + '.')
     return {key: '\n'.join(value + [table_end] + endings[key]) + '\n'
             for key, value in (('paper_document.tex', document), ('paper_execution.tex', execution), ('paper_stability.tex', stability))}
 
@@ -572,13 +572,13 @@ def summarize(data, output=OUT, require_complete=True):
         for name, text in _paper_tables(reports, variability).items():
             (destination / name).write_text(text)
     (destination / 'README.md').write_text(
-        '# PBPK-Match v2 实验汇总\n\n' + ('全部预登记方法和三个训练种子已完成。' if complete else '当前为部分结果；尚未完成：' + '、'.join(pending)) +
-        '\n\nsummary.json 保留逐请求结果、Top 1/2/3 各端点、未知与遗漏、风险—覆盖、配对比较和单种子统计。'
-        'quality.csv、execution.csv、stability.csv 为集成或外部方法的紧凑结果。'
-        '三种子均值和样本标准差见 seed_mean_sd；集成先在每个请求内转换精确并列的百分位名次，再等权平均。'
-        '\n\n这是使用已有资料的分组内部验证，不是未见数据的外部验证。文档支持质量与实际预测误差分开报告；'
-        '误差必须与覆盖率一起看。Top 2/3 不递补、不取三者最好结果；不同 AUC 观察窗不合并。'
-        '外部方法的适用性概率只使用外层训练折的文档标签校准，缺类别或不可校准折均明确记录。\n')
+        '# PBPK-Match v2 experiment summary\n\n' + ('All preregistered methods and three training seeds are complete.' if complete else 'These are partial results; incomplete: ' + ', '.join(pending)) +
+        '\n\nsummary.json retains per-request results, endpoints at Top 1/2/3, unknowns and omissions, risk–coverage, paired comparisons, and single-seed statistics. '
+        'quality.csv, execution.csv, and stability.csv are compact ensemble or external-method results. '
+        'Three-seed mean and sample standard deviation are in seed_mean_sd. Ensembles convert exact ties to percentile ranks within each request and then average equally.'
+        '\n\nThis is grouped internal validation on existing data, not external validation on unseen data. Documentary support and actual prediction errors are reported separately; '
+        'interpret error with coverage. Top 2/3 are not backfilled or replaced by the best of three; different AUC windows are not pooled. '
+        'External-method applicability probabilities are calibrated using document labels from outer-training folds only. Missing classes and uncalibratable folds are recorded explicitly.\n')
     write(destination / 'completion.json', {'completed': complete, 'state': 'complete' if complete else 'partial_pending_prespecified_runs', 'pending': pending,
         'input_count': len(refs), 'outputs': [_ref(p) for p in sorted(destination.iterdir())
                                            if p.name in ('summary.json', 'quality.csv', 'execution.csv', 'stability.csv', 'tables.tex', 'README.md',

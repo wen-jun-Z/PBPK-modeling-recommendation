@@ -104,7 +104,7 @@ def test_complete_single_seed_report_preserves_exact_positions(completed):
     assert len(value['inference_integrity']) == 3
     assert 'seed_mean_sd' not in value
     tex = (out / 'report/paper_document.tex').read_text()
-    assert '三个随机种子' not in tex and '种子为17' in tex
+    assert 'three random seeds' not in tex and 'seed 17' in tex
     completion = json.loads((out / 'report/completion.json').read_text())
     assert completion['completed'] and len(completion['outputs']) == 12
 

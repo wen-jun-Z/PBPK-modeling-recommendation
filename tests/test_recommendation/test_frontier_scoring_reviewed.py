@@ -2,11 +2,15 @@
 import copy
 import importlib
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 
 import pytest
+
+from frozen_frontier_sources import materialize_profile_inputs, materialize_scripts
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 v = importlib.import_module("run_frontier_scoring_reviewed")
@@ -362,9 +366,10 @@ def test_backend_retains_conditional_decoder_for_both_models(monkeypatch, model)
     assert v.backend(model)({}, 36).json_constraint == "conditional" and seen == ["official"]
 
 
-def test_real_frozen_profile_prepares_only_isolated_fixture_and_matches_evaluator(monkeypatch):
-    value = v.load_profile("v5")
+def test_current_english_revision_cannot_resume_a_frozen_historical_profile(monkeypatch):
+    v.load_profile("v5")
     actual_assessment = v.ASSESS
+    monkeypatch.setattr(v, "assert_prior_runs_idle", lambda: None)
     with tempfile.TemporaryDirectory(prefix="reviewed-profile-fixture-", dir=REAL_ROOT / "runtime/test_tmp") as directory:
         fixture = Path(directory)
         monkeypatch.setattr(v, "ASSESS", fixture / "assessment")
@@ -373,20 +378,51 @@ def test_real_frozen_profile_prepares_only_isolated_fixture_and_matches_evaluato
         v.RUN.mkdir()
         for name in ("cases.jsonl", "manifest.json"):
             (v.ASSESS / "validation/fresh" / name).symlink_to(actual_assessment / "validation/fresh" / name)
-        queries, candidates, packets, protocol = v.prepare()
-        assert len(queries) == 772 and len(candidates) == len(packets) == 280
-        assert protocol["profile_config"] == value and protocol["profile_config_sha256"] == v.CONFIG_SHA
-        assert protocol["system_prompt_sha256"] == value["system_prompt_sha256"]
-        assert protocol["generation"]["constrained_decoding"]["field_order"] == ["i", "g", "a", "e"]
-        assert protocol["validation_policy"]["legacy_case_count"] == 733
-        assert protocol["validation_policy"]["fresh_case_count"] == 32
-        assert protocol["implementation_sha256"][Path(v.__file__).name] == v.base.file_sha(Path(v.__file__))
-        assert len(v.cohorts()[0]) == 733 and len(v.cohorts()[1]) == 32
-        evaluator = importlib.import_module("evaluate_frontier_automatic")
-        result = evaluator.evaluate_run(v.OUT, v.ASSESS, protocol_only=True)
-        metadata = evaluator.read_judge_metadata(v.ASSESS, result["protocol"])
-        assert metadata["state"] == "frozen" and metadata["primary_repo"] == "microsoft/phi-4"
-        assert metadata["secondary_repo"] == "Qwen/Qwen3.6-27B"
-        assert v.prepare()[3] == protocol
+        with pytest.raises(ValueError, match="Frozen engine dependency changed"):
+            v.prepare()
         assert not (v.ASSESS / "validation/phi_records.jsonl").exists()
         assert not (v.ASSESS / "judgments.jsonl").exists()
+
+
+def test_real_historical_profile_prepares_in_isolated_revision_and_matches_evaluator(tmp_path):
+    materialize_scripts(tmp_path)
+    materialize_profile_inputs(tmp_path)
+    # A fresh process imports the actual old modules, not current modules with
+    # substituted hashes. Only CPU interpreter metadata uses the test runtime.
+    code = r'''
+import importlib
+from pathlib import Path
+import socket
+import sys
+def no_network(*args, **kwargs):
+    raise AssertionError("Historical preparation fixture must not use the network")
+socket.socket.connect = no_network
+import run_frontier_scoring_reviewed as v
+v.utilities.APP = v.utilities.MODERN = Path(sys.executable)
+value = v.load_profile("v5")
+queries, candidates, packets, protocol = v.prepare()
+assert len(queries) == 772 and len(candidates) == len(packets) == 280
+assert protocol["profile_config"] == value and protocol["profile_config_sha256"] == v.CONFIG_SHA
+assert protocol["system_prompt_sha256"] == value["system_prompt_sha256"]
+assert protocol["generation"]["constrained_decoding"]["field_order"] == ["i", "g", "a", "e"]
+assert protocol["validation_policy"]["legacy_case_count"] == 733
+assert protocol["validation_policy"]["fresh_case_count"] == 32
+assert protocol["implementation_sha256"][Path(v.__file__).name] == v.base.file_sha(Path(v.__file__))
+assert len(v.cohorts()[0]) == 733 and len(v.cohorts()[1]) == 32
+evaluator = importlib.import_module("evaluate_frontier_automatic")
+result = evaluator.evaluate_run(v.OUT, v.ASSESS, protocol_only=True)
+metadata = evaluator.read_judge_metadata(v.ASSESS, result["protocol"])
+assert metadata["state"] == "frozen" and metadata["primary_repo"] == "microsoft/phi-4"
+assert metadata["secondary_repo"] == "Qwen/Qwen3.6-27B"
+assert v.prepare()[3] == protocol
+assert not (v.ASSESS / "validation/phi_records.jsonl").exists()
+assert not (v.ASSESS / "judgments.jsonl").exists()
+print("Historical preparation and evaluator verified; no inference performed")
+'''
+    environment = {"PATH": os.defpath, "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": str(tmp_path / "scripts") + os.pathsep + str(REAL_ROOT / "src"),
+        "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
+    completed = subprocess.run([sys.executable, "-c", code], cwd=tmp_path, env=environment,
+        capture_output=True, text=True, timeout=90)
+    assert completed.returncode == 0, completed.stderr
+    assert "Historical preparation and evaluator verified" in completed.stdout

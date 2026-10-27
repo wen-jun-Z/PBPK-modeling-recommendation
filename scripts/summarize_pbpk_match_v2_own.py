@@ -157,15 +157,15 @@ def summarize(data=None, output=r.OUT, *, scope_path=None):
         (destination / filename).write_text('% Own-only scope; not automatically inserted into the manuscript.\n' + text)
         names.append(filename)
     (destination / 'README.md').write_text(
-        '# PBPK-Match v2：自建模型与已完成对照\n\n'
-        '自建模型的五折外层、三折内层和三个种子已完成；保留并复用已完成的9个外部对照。'
-        '本目录只表示这一缩减范围完成，**不表示原300个拟合任务全部完成**。\n\n'
-        '暂缓：去数值条件、冻结编码器、MLP、LambdaMART。去误差分支直接使用同一模型的文档分数，没有另外训练。\n\n'
-        'summary.json包含逐请求结果、单种子结果、三种子波动与集成、校准与覆盖率、'
-        '前三位各终点GMFE和遗漏、稳定性和配对统计。quality.csv、execution.csv、stability.csv为简表。'
-        '各名次不递补，不取前三位最佳值；不同AUC窗口不合并。\n\n'
-        '这是现有数据的分组内部验证。文档支持和执行预测误差分开报告；GMFE须结合覆盖率比较。'
-        '论文表格片段已导出，但没有自动修改论文；未完成的消融不能作为已验证结论。\n')
+        '# PBPK-Match v2: in-house model and completed controls\n\n'
+        'The in-house model completed five outer folds, three inner folds, and three seeds; nine completed external controls are retained and reused. '
+        'This directory records completion of the reduced scope, **not completion of all original 300 fitting tasks**.\n\n'
+        'Deferred: no numeric conditions, frozen encoder, MLP, and LambdaMART. The no-error-branch variant directly uses document scores from the same model, without separate training.\n\n'
+        'summary.json contains per-request and per-seed results, three-seed variation and ensembles, calibration and coverage, '
+        'GMFE and omission for each endpoint at the first three positions, stability, and paired statistics. quality.csv, execution.csv, and stability.csv are compact tables. '
+        'Positions are not backfilled and the best of the top three is not selected. Different AUC windows are not pooled.\n\n'
+        'This is grouped internal validation on existing data. Documentary support and execution-prediction errors are separate; interpret GMFE together with coverage. '
+        'Manuscript table fragments were exported without automatically modifying the manuscript. Incomplete ablations are not validated conclusions.\n')
     r.write(destination / 'completion.json', {'completed': True, 'state': 'complete_own_only',
         'original_protocol_completed': False, 'deferred_trained_methods': list(DEFERRED),
         'input_count': len(refs), 'outputs': [r._ref(destination / name) for name in names]})

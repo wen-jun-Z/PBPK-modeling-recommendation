@@ -291,7 +291,7 @@ def test_repair_throughput_does_not_count_cpu_replayed_records(monkeypatch):
     result = throughput.update(snapshot)
     assert result["rate"] == pytest.approx(2 / 120)
     assert result["eta"] is None
-    assert "复用不计速度" in result["note"]
+    assert "reused outputs excluded from throughput" in result["note"]
 
 
 def test_v2_reused_v1_call_is_not_a_new_gpu_generation(tmp_path, monkeypatch):

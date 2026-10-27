@@ -14,7 +14,7 @@ SPEC = importlib.util.spec_from_file_location("unicode_evidence_server", ROOT / 
 server = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(server)
 
-UNICODE = ["⁻", "∗", "é", "药", "𠀀", "🧪", "𝑨", "\u2028", "\u2029", "\uffff", "\U0010ffff"]
+UNICODE = ["⁻", "∗", "é", "\u836f", "𠀀", "🧪", "𝑨", "\u2028", "\u2029", "\uffff", "\U0010ffff"]
 
 
 def callback_for(character, value_schema):

@@ -271,23 +271,23 @@ def command(python, *args):
 
 def publish_summary():
     folder = ROOT / "experiments/model_recommendation/results_summary"
-    link = folder / "08_条件引用评分"
+    link = folder / "08_conditional_citation_assessment"
     if not link.exists(): link.symlink_to(os.path.relpath(ASSESS, folder), target_is_directory=True)
     path = folder / "README.md"
     text = path.read_text()
     first, last = "<!-- conditional-v4:start -->", "<!-- conditional-v4:end -->"
     state, worker = base.read(RUN / "pipeline_status.json", {}), base.read(RUN / "status.json", {})
     judge = worker.get("judge")
-    progress = (f"{'主评分' if judge == 'primary' else '5% 复判'}已提交：{worker.get('committed_pairs', 0):,}/"
-                f"{worker.get('expected_pairs', 216160):,}。" if judge in {"primary", "secondary"} else "全量评分尚未启动。")
-    block = (f"{first}\n## 条件引用评分 v4\n\n更新：{base.now()}；阶段：`{state.get('stage', 'prepare')}`；"
-        f"状态：`{state.get('state', 'preparing')}`。{progress}\n\n"
-        "保持原 v2 评分说明和先等级后引用的顺序；已知结论必须由模型选择真实引用，未知允许空引用。"
-        "Phi-4 与 Qwen3.6-27B 各重新运行 733 条预检，旧预测不复用。这些样例属于回归和来源覆盖审查，不再是新的盲测。"
-        "Phi 主评分必须通过原三组门槛、代表原文验收与 39 例来源复核；Qwen 仅作固定 5% 敏感性复判。"
-        "未知不作负标签，原质量停止规则不变；引用语法通过不代表证据语义正确或专家金标准。\n\n"
-        "[状态与结果](08_条件引用评分/)；命令：`runtime/app-env/bin/python scripts/run_frontier_scoring_conditional_v4.py "
-        f"status` / `stop` / `start`。SSH 断开后继续。\n{last}")
+    progress = (f"{'Primary assessment' if judge == 'primary' else '5% repeat judgment'} — committed: {worker.get('committed_pairs', 0):,}/"
+                f"{worker.get('expected_pairs', 216160):,}. " if judge in {"primary", "secondary"} else "Full assessment has not started.")
+    block = (f"{first}\n## Conditional-citation assessment v4\n\nUpdated: {base.now()}; Stage: `{state.get('stage', 'prepare')}`; "
+        f"Status: `{state.get('state', 'preparing')}`. {progress}\n\n"
+        "The v2 instructions and grade-before-citation order are retained. Known judgments require model-selected real citations; unknowns may have empty citations. "
+        "Phi-4 and Qwen3.6-27B each rerun 733 prechecks without reusing old predictions. These are regression and source-coverage reviews, not new blinded tests. "
+        "Phi primary assessment must pass the original three-group thresholds, representative-source checks, and 39-case review. Qwen is only the fixed 5% sensitivity judge. "
+        "Unknowns are not negative labels and original quality-stop rules remain. Valid citation syntax does not establish semantic support or expert gold standards.\n\n"
+        "[Status and results](08_conditional_citation_assessment/); Command: `runtime/app-env/bin/python scripts/run_frontier_scoring_conditional_v4.py "
+        f"status` / `stop` / `start`. Continues after SSH disconnects.\n{last}")
     if first in text:
         if last not in text: raise ValueError("Incomplete README markers")
         text = text[:text.index(first)] + block + text[text.index(last)+len(last):]

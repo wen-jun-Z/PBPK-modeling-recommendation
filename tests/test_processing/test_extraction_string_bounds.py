@@ -29,7 +29,7 @@ def candidate(**updates):
 def consume(schema, text):
     from lmformatenforcer import CharacterLevelParserConfig, JsonSchemaParser
     parser = JsonSchemaParser(schema, config=CharacterLevelParserConfig(
-        alphabet="".join(chr(i) for i in range(32, 127)) + "×±µ中"))
+        alphabet="".join(chr(i) for i in range(32, 127)) + "×±µ\u4e2d"))
     for character in text:
         if character not in parser.get_allowed_characters():
             return None

@@ -100,9 +100,9 @@ def publish_summary():
     first, last = f"<!-- reasoned-{r.PROFILE}:start -->", f"<!-- reasoned-{r.PROFILE}:end -->"
     start, end = text.index(first), text.index(last) + len(last)
     block = text[start:end].replace("scripts/run_frontier_scoring_fast.py", "scripts/run_frontier_scoring_citation_complete.py")
-    old = "提示词保持 v5，733条回归和此前未被模型调用的32条控制全部重新生成；四组门槛、来源覆盖与39例来源复核不变。"
-    new = ("本版完善完整引用链提示，并按实际请求检查用途约束。192条合成控制均为开发回归，"
-        "573条原文案例用于来源覆盖；全部重新生成，不宣称盲测或独立准确率。四组数值门槛、494条代表来源覆盖与39例来源复核不变。")
+    old = "Prompts remain v5. All 733 regression cases and 32 controls not previously submitted to the model are regenerated; four-group thresholds, source coverage, and the 39-case source review remain unchanged."
+    new = ("This version improves complete-citation-chain instructions and checks applicability against actual requests. All 192 synthetic controls are development regression, "
+        "and 573 source cases assess coverage. All are regenerated without claiming blinded or independent accuracy. Four numerical thresholds, 494 representative sources, and the 39-case review remain unchanged.")
     if old not in block: raise ValueError("Inherited summary disclosure changed")
     block = block.replace(old, new)
     path.write_text(text[:start] + block + text[end:])

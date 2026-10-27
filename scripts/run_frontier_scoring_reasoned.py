@@ -323,18 +323,18 @@ def pipeline():
 
 def publish_summary():
     folder = ROOT / "experiments/model_recommendation/results_summary"
-    link = folder / f"10_推理裁判评分_{PROFILE}"
+    link = folder / f"10_reasoning_judge_assessment_{PROFILE}"
     if not link.exists(): link.symlink_to(os.path.relpath(ASSESS, folder), target_is_directory=True)
     path = folder / "README.md"; text = path.read_text()
     first, last = f"<!-- reasoned-{PROFILE}:start -->", f"<!-- reasoned-{PROFILE}:end -->"
     state, worker = base.read(RUN / "pipeline_status.json", {}), base.read(RUN / "status.json", {})
-    progress = (f"{'主评分' if worker.get('judge') == 'primary' else '5% 复判'}已提交：{worker.get('committed_pairs', 0):,}/"
-        f"{worker.get('expected_pairs', 216160):,}。" if worker.get("judge") in {"primary", "secondary"} else "全量评分尚未启动。")
-    block = (f"{first}\n## 推理裁判 {PROFILE}\n\n阶段：`{state.get('stage', 'prepare')}`；状态：`{state.get('state', 'preparing')}`。{progress}\n\n"
-        "Qwen3.6-27B 先进行有长度上限的原生推理，再生成有引用约束的判断；Phi-4 作为不增加思考阶段的参考。"
-        "提示词保持 v5，733条回归和此前未被模型调用的32条控制全部重新生成；四组门槛、来源覆盖与39例来源复核不变。"
-        "主裁判任一完整控制组失败即停止，未知不记为负标签；推理和引用语法不构成专家金标准。\n\n"
-        f"[状态与结果]({link.name}/)；`runtime/app-env/bin/python scripts/run_frontier_scoring_reasoned.py --profile {PROFILE} status` / `stop` / `start`。\n{last}")
+    progress = (f"{'Primary assessment' if worker.get('judge') == 'primary' else '5% repeat judgment'} — committed: {worker.get('committed_pairs', 0):,}/"
+        f"{worker.get('expected_pairs', 216160):,}. " if worker.get("judge") in {"primary", "secondary"} else "Full assessment has not started.")
+    block = (f"{first}\n## Reasoning judge {PROFILE}\n\nStage: `{state.get('stage', 'prepare')}`; Status: `{state.get('state', 'preparing')}`. {progress}\n\n"
+        "Qwen3.6-27B performs length-bounded native reasoning followed by citation-constrained judgment. Phi-4 is the reference without an additional thinking stage. "
+        "Prompts remain v5. All 733 regression cases and 32 controls not previously submitted to the model are regenerated; four-group thresholds, source coverage, and the 39-case source review remain unchanged. "
+        "Stop if the primary judge fails any complete control group. Unknowns are not negative labels; reasoning and citation syntax do not constitute expert gold standards.\n\n"
+        f"[Status and results]({link.name}/); `runtime/app-env/bin/python scripts/run_frontier_scoring_reasoned.py --profile {PROFILE} status` / `stop` / `start`. \n{last}")
     if first in text:
         if last not in text: raise ValueError("Incomplete summary markers")
         text = text[:text.index(first)]+block+text[text.index(last)+len(last):]

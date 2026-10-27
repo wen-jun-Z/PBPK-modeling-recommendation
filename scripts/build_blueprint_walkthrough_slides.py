@@ -21,7 +21,7 @@ import numpy as np
 from build_blueprint_method_slides import (
     ROOT, OUT, Slide, render, TEAL, INK, MUTED, GREEN, GOLD, PURPLE,
     PALE, GREEN_PALE, GOLD_PALE, PURPLE_PALE, WHITE, LINE, FONT_FILE,
-    EQUATION_FONT_SIZE, fitz, Image,
+    EQUATION_FONT_SIZE, fitz, Image, fit_size,
 )
 
 sys.path.insert(0, str(ROOT / 'src'))
@@ -29,7 +29,7 @@ from pbpk_kb.blueprint_policy import blood_partition_calibration as blood
 from pbpk_kb.blueprint_policy import permeability_model as exchange
 from pbpk_kb.blueprint_policy.perfusion_calibration import clearance_inputs
 
-STEM = 'PBPK蓝图设计_人体模板到预测_方法与实例'
+STEM = 'PBPK_blueprint_from_physiology_to_prediction'
 PINS = {}
 
 
@@ -162,7 +162,7 @@ def charts(data, work):
 def page(title, subtitle, stage):
     s=Slide(title,subtitle,stage,'')
     s.ops[0]['rows']=['PBPK BLUEPRINT  /  '+stage]
-    s.ops[4]['rows']=['人体模板 → 参数映射 → 观测校准 → 可行性检查 → 锁定预测']
+    s.ops[4]['rows']=['Human template → parameter mapping → observational calibration → feasibility checks → locked prediction']
     return s
 
 
@@ -190,14 +190,14 @@ def eq(s,latex,y,h=58,x=50,w=530):
 def side(s,a,b):
     s.line([(601,147),(601,431)],'DFE7EA',.8)
     for y,(title,body) in zip([156,292],[a,b]):
-        txt(s,624,y,290,title,20,TEAL,True)
-        h=txt(s,624,y+36,290,body,17)
+        txt(s,624,y,290,title,fit_size(title,290,30,20,line=1.22),TEAL,True)
+        h=txt(s,624,y+36,290,body,fit_size(body,290,92,17,line=1.22))
         assert h<=92,(title,body)
 
 
 def carry(s,t):
     s.rect(42,451,876,39,PALE,None)
-    h=txt(s,56,459,848,t,16,TEAL)
+    h=txt(s,56,459,848,t,fit_size(t,848,27,16,line=1.22,minimum=11),TEAL)
     assert h<28,t
 
 
@@ -241,130 +241,130 @@ def slides(data, plots):
     pages=[]; c=data['Cefepime']
     def add(title,sub,stage):
         slide=page(title,sub,stage);pages.append(slide)
-        slide.ops[4]['rows']=['输入与构建 → 观测校准 → 约束检查 → 锁定预测']
+        slide.ops[4]['rows']=['Inputs and construction → observational calibration → constraint checks → locked prediction']
         return slide
     def label(slide,x,y,w,value,color=TEAL,size=18):
-        return txt(slide,x,y,w,value,size,color,True,'center')
+        return txt(slide,x,y,w,value,fit_size(value,w,31,size,line=1.22,minimum=12),color,True,'center')
     def card(slide,x,y,w,h,title,body='',color=TEAL,fill=PALE):
         slide.rect(x,y,w,h,fill,color,.8)
         label(slide,x+10,y+11,w-20,title,color,19)
-        if body:txt(slide,x+12,y+46,w-24,body,17,INK,align='center')
+        if body:txt(slide,x+12,y+46,w-24,body,fit_size(body,w-24,h-51,17,line=1.22,minimum=12),INK,align='center')
     def math(slide,latex,x,y,w,h=62,color=INK):
         slide.eq(x,y,w,h,latex,EQUATION_FONT_SIZE,color)
 
     # 1 — Establish the complete task before showing the calculation details.
-    s=add('蓝图设计：把已有证据变成可检验的模型',
-          '没有适用的现成模型时，用人体模板、药物资料和少量开发观测完成构建。','一条主线')
+    s=add('Blueprint design: evidence becomes a testable model',
+          'When no suitable existing model is available, combine a human template, drug data, and a few development observations.','One workflow')
     for i,(title,body,col,fill) in enumerate([
-        ('输入','人体＋药物资料\n剂量＋开发观测',TEAL,PALE),
-        ('构建人体方程','血流连接器官\n计算分布与清除',GREEN,GREEN_PALE),
-        ('校准与检查','只调允许的参数\n检查范围冲突',GOLD,GOLD_PALE),
-        ('锁定后预测','新给药条件\n曲线＋终点',PURPLE,PURPLE_PALE)]):
+        ('Inputs','Human + drug data\nDose + observations',TEAL,PALE),
+        ('Build equations','Blood flow links organs\nDistribution and clearance',GREEN,GREEN_PALE),
+        ('Calibrate and check','Adjust allowed parameters\nCheck bound conflicts',GOLD,GOLD_PALE),
+        ('Predict after locking','New dosing conditions\nCurve + endpoints',PURPLE,PURPLE_PALE)]):
         x=50+220*i;card(s,x,166,198,125,title,body,col,fill)
         if i<3:arr(s,[(x+202,228),(x+215,228)])
-    label(s,58,324,846,'方法重点：哪些量保留，哪些量能调，什么情况下允许修复',TEAL,21)
-    for x,title,col,fill in [(73,'保护可信证据',TEAL,PALE),(365,'约束未知量校准',GREEN,GREEN_PALE),
-                             (657,'诊断并受限修复',GOLD,GOLD_PALE)]:
+    label(s,58,324,846,'Method focus: what is fixed, what is adjustable, and when repair is allowed',TEAL,21)
+    for x,title,col,fill in [(73,'Protect reliable evidence',TEAL,PALE),(365,'Constrain unknowns',GREEN,GREEN_PALE),
+                             (657,'Diagnose and repair',GOLD,GOLD_PALE)]:
         s.rect(x,377,230,43,fill,None);label(s,x,385,230,title,col,18)
-    carry(s,'目标是交付可追溯、可重复验证的模型；人体模板本身不是我们的新发明。')
+    carry(s,'Deliver a traceable model that can be validated repeatedly; the human template itself is established methodology.')
 
     # 2 — One capacity relation connects the input evidence to the state equations.
-    s=add('人体给结构，药物资料决定怎样分布和清除',
-          '人体提供体积与血流；药物资料通过分配公式转成模型所需的参数。','输入与构建')
+    s=add('Physiology supplies structure; drug data control distribution and clearance',
+          'Physiology supplies volumes and flow. Partition formulas map drug data to model parameters.','Inputs and construction')
     pic(s,plots['human'],51,156,121,270)
-    card(s,195,153,302,105,'人体模板','器官体积、组成、血流\n15器官×双区＋3血池',TEAL,PALE)
-    card(s,195,284,302,123,'药物与给药资料','fu、logP、pKa、分子量、CL\n剂量、输注时长及证据来源',GREEN,GREEN_PALE)
+    card(s,195,153,302,105,'Human template','Organ volumes, composition, flow\n15 organs × 2 regions + 3 pools',TEAL,PALE)
+    card(s,195,284,302,123,'Drug and dosing data','fu, logP, pKa, molecular weight, CL\nDose, infusion duration, sources',GREEN,GREEN_PALE)
     arr(s,[(502,204),(531,204),(531,278),(555,278)])
     arr(s,[(502,345),(531,345),(531,278)],GREEN)
     s.rect(565,153,344,254,PALE,TEAL,.8)
-    label(s,578,166,318,'体积 × 分配 → 等效容量',TEAL,19)
+    label(s,578,166,318,'Volume × partitioning → equivalent capacity',TEAL,19)
     math(s,r'K=\sum_c V_c k_c',584,212,305,66)
     math(s,r'C_{equiv}=A/K',584,293,305,58)
-    txt(s,583,368,310,'A：药量；K：容药的等效容量。',16,MUTED,align='center')
-    carry(s,'分配初值来自PK-Sim Standard或Rodgers–Rowland；K不是器官的真实体积。')
+    txt(s,583,368,310,'A: drug amount; K: equivalent drug-holding capacity.',16,MUTED,align='center')
+    carry(s,'Initial partitioning uses PK-Sim Standard or Rodgers–Rowland; K is not anatomical volume.')
 
     # 3 — The model's actual organ dynamics, not an optimizer derivation.
-    s=add('核心方程：血流搬运药物，血管与组织交换',
-          '每个器官分血管与组织两区；按血流连接，组成当前的线性微分方程。','人体核心方程')
-    card(s,225,153,237,83,'血管区：药量 Av','容量 Kv',TEAL,PALE)
-    card(s,652,153,251,83,'组织区：药量 Ae','容量 Ke',GREEN,GREEN_PALE)
-    arr(s,[(58,193),(219,193)]);label(s,54,157,158,'血流带入',TEAL,17)
-    arr(s,[(468,193),(646,193)],GREEN,both=True);label(s,477,156,160,'交换 J',GREEN,18)
-    arr(s,[(345,239),(345,261),(520,261)]);label(s,370,234,159,'血流带出',TEAL,16)
+    s=add('Core equations: blood flow transports drug; vascular and tissue regions exchange it',
+          'Each organ has vascular and tissue regions, linked by flow to form the current linear differential equations.','Physiological core equations')
+    card(s,225,153,237,83,'Vascular: amount Av','Capacity Kv',TEAL,PALE)
+    card(s,652,153,251,83,'Tissue: amount Ae','Capacity Ke',GREEN,GREEN_PALE)
+    arr(s,[(58,193),(219,193)]);label(s,54,157,158,'Flow in',TEAL,17)
+    arr(s,[(468,193),(646,193)],GREEN,both=True);label(s,477,156,160,'Exchange J',GREEN,18)
+    arr(s,[(345,239),(345,261),(520,261)]);label(s,370,234,159,'Flow out',TEAL,16)
     math(s,r'J=s_{ex}Q_{eff}R_{BP}\left(\frac{A_v}{K_v}-\frac{A_e}{K_e}\right)',92,278,780,72)
     math(s,r'\frac{dA_v}{dt}=Q(C_{in,b}-C_{v,b})-J',67,360,525,68)
     math(s,r'\frac{dA_e}{dt}=J',621,360,267,68)
-    carry(s,'Q是血流，RBP是血/浆比，A/K是等效浓度；J是按浓度差计算的有效交换。')
+    carry(s,'Q is blood flow, RBP the blood/plasma ratio, and A/K effective concentration. J follows the concentration difference.')
 
     # 4 — Only the four effects and the actual development objective are needed.
-    s=add('用开发观测调四个倍率，让计算曲线贴近实测',
-          '解剖体积、血流和采血位置权重保持既定；未知量只能在允许范围内调整。','观测校准')
+    s=add('Fit four multipliers to development observations',
+          'Anatomical volumes, flow, and sampling weights stay fixed. Unknowns vary only within allowed bounds.','Observational calibration')
     for i,(title,body,col,fill) in enumerate([
-        ('清除 sCL','调清除强度',TEAL,PALE),('组织 sK','调组织容量',GREEN,GREEN_PALE),
-        ('交换 sex','调交换速度',GOLD,GOLD_PALE),('血细胞 sRBC','调血细胞分配',PURPLE,PURPLE_PALE)]):
+        ('Clearance sCL','Scale clearance',TEAL,PALE),('Tissue sK','Scale tissue capacity',GREEN,GREEN_PALE),
+        ('Exchange sex','Scale exchange rate',GOLD,GOLD_PALE),('Blood cells sRBC','Scale RBC partitioning',PURPLE,PURPLE_PALE)]):
         card(s,50+i*220,150,198,89,title,body,col,fill)
-    for x,t,col in [(75,'试一组倍率',TEAL),(370,'求解浓度曲线',GREEN),(665,'比较开发观测',GOLD)]:
+    for x,t,col in [(75,'Try multipliers',TEAL),(370,'Solve the curve',GREEN),(665,'Compare observations',GOLD)]:
         s.rect(x,267,220,41,PALE,None);label(s,x,274,220,t,col,18)
         if x<665:arr(s,[(x+227,287),(x+287,287)])
     math(s,r'\hat{\mathbf{s}}=\arg\min_{\mathbf{s}\in\mathcal{S}}\left[\frac{1}{n}\sum_{j=1}^{n}\left(\ln\frac{\hat C_p(t_j;\mathbf{s})}{C_{obs}(t_j)}\right)^2+P(\mathbf{s})\right]',52,325,856,85)
-    txt(s,82,414,797,'目标 = 逐点浓度误差＋调整惩罚；S是允许范围，P限制过大的调整。',17,INK,align='center')
-    carry(s,'只用开发点；两种分配公式分别校准，再按开发损失选择。拟合好不等于参数唯一。')
+    txt(s,82,414,797,'Objective = pointwise concentration error + adjustment penalty. S defines bounds; P penalizes large changes.',17,INK,align='center')
+    carry(s,'Use development points only. Calibrate both partition formulas and select by development loss; a good fit does not ensure unique parameters.')
 
     # 5 — Keep the decision evidence, omit numerical optimizer mechanics.
-    s=add('不是所有参数都能改：保护证据，冲突才修复',
-          '先判断参数范围是否可能解释可见观测，再决定是否允许调整范围。','约束与修复')
+    s=add('Protect evidence; repair only diagnosed conflicts',
+          'Check whether permitted parameter ranges can explain visible observations before allowing a bound adjustment.','Constraints and repair')
     s.rect(50,151,418,282,PALE,TEAL,.8)
-    label(s,66,164,386,'① 保护合格输入',TEAL,20)
-    txt(s,73,210,372,'例如：净肾清除 CL_R 固定，\n只校准剩余的清除部分。',19,INK)
+    label(s,66,164,386,'① Protect qualified inputs',TEAL,20)
+    txt(s,73,210,372,'Example: keep net renal CL_R fixed;\ncalibrate only remaining clearance.',19,INK)
     math(s,r'CL=CL_R+s_{CL}(CL_0-CL_R)',62,285,394,62)
-    txt(s,72,371,374,'无肾清除拆分证据时，CL_R = 0。',16,MUTED)
+    txt(s,72,371,374,'Without renal-split evidence, CL_R = 0.',16,MUTED)
     s.rect(492,151,418,282,GOLD_PALE,GOLD,.8)
-    label(s,508,164,386,'② 用守恒上界检查冲突',GOLD,20)
+    label(s,508,164,386,'② Check a conservation upper bound',GOLD,20)
     math(s,r'C_p(t)\leq D_{delivered}(t)\max_i h_i',508,213,386,64)
-    txt(s,513,292,375,'孟鲁司特：可见上界约0.029 mg/L，\n开发实测为0.373 mg/L。',17,INK)
-    txt(s,513,351,375,'无冲突：直接锁定。\n有冲突：仅合格未实测RBC下界可修复；\n其余情况停止。',17,GOLD)
-    carry(s,'合格实测血液分配会阻止自由RBC校准；不为降低误差而修改可信输入。')
+    txt(s,513,292,375,'Montelukast: bound ≈0.029 mg/L;\nobserved development value 0.373 mg/L.',17,INK)
+    txt(s,513,351,375,'No conflict: lock directly.\nConflict: repair only an eligible unmeasured RBC lower bound; otherwise stop.',17,GOLD)
+    carry(s,'Qualified blood-partition measurements block free RBC calibration; reliable inputs are not changed merely to reduce error.')
 
     # 6 — Locked parameters still permit target-human and dosing changes.
-    s=add('锁定后换输入：计算新条件的曲线和终点',
-          '锁定分配公式和四倍率；新人体条件重建系统，新剂量与时长进入给药项。','锁定预测')
+    s=add('After locking, predict curves and endpoints under new inputs',
+          'Lock the partition formula and four multipliers. Rebuild for new physiology; dose and duration enter the input term.','Locked prediction')
     for i,(title,body,col,fill) in enumerate([
-        ('锁定','分配公式＋四个倍率',TEAL,PALE),('改变输入','人体＋剂量＋输注时长',GOLD,GOLD_PALE),
-        ('得到预测','血浆浓度曲线＋终点',GREEN,GREEN_PALE)]):
+        ('Lock','Partition formula + four multipliers',TEAL,PALE),('Change inputs','Human + dose + infusion duration',GOLD,GOLD_PALE),
+        ('Predict','Plasma curve + endpoints',GREEN,GREEN_PALE)]):
         x=50+i*295;card(s,x,149,270,89,title,body,col,fill)
         if i<2:arr(s,[(x+275,192),(x+288,192)],col)
     math(s,r'\frac{d\mathbf{A}}{dt}=M(\hat{\mathbf{s}};\mathcal{H}_{target})\mathbf{A}+\mathbf{b}r_{target}(t)',50,273,555,73)
     math(s,r'\hat C_p=\mathbf{h}_{target}^{\mathsf{T}}\mathbf{A}',70,360,510,60)
     s.rect(632,264,278,164,GREEN_PALE,GREEN,.8)
-    label(s,644,277,254,'同一条曲线 → 11类输出',GREEN,18)
-    txt(s,649,318,243,'曲线 / AUC / Cmax / Tmax\nClast / 半衰期 / AUC∞\nCL / Vz / MRT / Vss',17,INK,align='center')
-    carry(s,'M汇总血流、交换和清除；h将药量转成采血浓度。目标观测只用于评分。')
+    label(s,644,277,254,'One curve → 11 output types',GREEN,18)
+    txt(s,649,318,243,'Curve / AUC / Cmax / Tmax\nClast / half-life / AUC∞\nCL / Vz / MRT / Vss',17,INK,align='center')
+    carry(s,'M combines flow, exchange, and clearance; h maps amounts to sampled concentration. Target observations are used only for scoring.')
 
     # 7 — One real worked example replaces the step-by-step arithmetic pages.
-    s=add('头孢吡肟实例：30分钟输注拟合，3分钟输注预测',
-          '用5个开发浓度点校准，随后固定参数；目标研究的观测不参与再次拟合。','一个完整实例')
-    label(s,54,147,425,'开发：2000 mg / 30 min / 79 kg',TEAL,18)
-    label(s,488,147,425,'目标：2000 mg / 3 min / 70 kg¹',GOLD,18)
+    s=add('Cefepime: calibrate at 30 min, predict at 3 min',
+          'Calibrate on five development concentrations, then freeze parameters. Target-study observations are excluded from refitting.','A complete example')
+    label(s,54,147,425,'Development: 2000 mg / 30 min / 79 kg',TEAL,18)
+    label(s,488,147,425,'Target: 2000 mg / 3 min / 70 kg¹',GOLD,18)
     pic(s,plots['Cefepime'],48,180,868,264)
-    carry(s,f'开发GMFE {c["gmfe"]:.2f} → 目标{c["target_gmfe"]:.2f}；GMFE越接近1越好。¹70 kg是目标人体假设。')
+    carry(s,f'Development GMFE {c["gmfe"]:.2f} → target {c["target_gmfe"]:.2f}; closer to 1 is better. ¹Target assumes 70 kg.')
 
     # 8 — Separate the existing physics from the project's construction policy.
-    s=add('我们的贡献：让“怎么建、能改什么”有依据',
-          '复用人体模板与分配公式；重点在证据约束、可行性诊断及可追溯交付。','重点与交付')
+    s=add('Our contribution: evidence-based construction and adjustment',
+          'Reuse physiology and partition formulas; focus on evidence constraints, feasibility diagnosis, and traceable delivery.','Focus and deliverables')
     for x,title,body,col,fill in [
-        (50,'证据保护','记录来源与单位\n保护合格构建输入',TEAL,PALE),
-        (345,'受限校准','未知量有明确作用位置\n倍率有规定的调整范围',GREEN,GREEN_PALE),
-        (640,'冲突诊断与修复','先检查物理可行性\n只修复符合条件的范围',GOLD,GOLD_PALE)]:
+        (50,'Evidence protection','Record sources and units\nProtect qualified inputs',TEAL,PALE),
+        (345,'Bounded calibration','Explicit roles for unknowns\nPrespecified multiplier bounds',GREEN,GREEN_PALE),
+        (640,'Diagnose and repair','Check physical feasibility\nRepair only eligible bounds',GOLD,GOLD_PALE)]:
         card(s,x,166,270,145,title,body,col,fill)
-    label(s,65,346,830,'交付：模型与参数 ＋ 曲线和终点 ＋ 来源、校准与修复记录',TEAL,21)
-    txt(s,74,395,810,'每个终点经过可计算性检查；来源不够或质量不达标时明确标记。',18,INK,align='center')
-    carry(s,'当前适用范围：有本药少量开发观测的单次静脉血浆预测；实例不代表所有药物效果。')
+    label(s,65,346,830,'Deliver: model and parameters + curves and endpoints + source, calibration, and repair records',TEAL,21)
+    txt(s,74,395,810,'Check each endpoint for calculability; flag insufficient sources or inadequate quality.',18,INK,align='center')
+    carry(s,'Current scope: single-dose IV plasma prediction with a few drug-specific development observations. This case does not establish all-drug performance.')
     assert len(pages)==8
     return pages
 
 
 def main():
-    suffixes=('.pptx','.pdf','_预览.png')
+    suffixes=('.pptx','.pdf','_preview.png')
     before={suffix:hashlib.sha256((OUT/(STEM+suffix)).read_bytes()).hexdigest()
             for suffix in suffixes if (OUT/(STEM+suffix)).exists()}
     data=cases()
@@ -391,8 +391,8 @@ def main():
                 except ValueError as e:errors.append((i,str(e)))
         assert not errors,errors
         toc=[[1,item.ops[0]['rows'][0].split('/  ')[-1],i] for i,item in enumerate(pages,1)]
-        render(pages,output_dir=work,stem=STEM,title='PBPK蓝图设计：人体模板到预测（8页重点版）',
-            required_terms=['人体','微分方程','校准','头孢吡肟','孟鲁司特','浓度'],
+        render(pages,output_dir=work,stem=STEM,title='PBPK blueprint design: physiology to prediction (8-slide overview)',
+            required_terms=['Human','Differential equations','Calibration','Cefepime','Montelukast','Concentration'],
             toc=toc)
         # Frozen scientific inputs must remain unchanged throughout the build.
         for path,sha in PINS.items():

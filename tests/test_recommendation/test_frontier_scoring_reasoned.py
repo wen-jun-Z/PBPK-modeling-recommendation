@@ -8,6 +8,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from frozen_frontier_sources import historical_sha
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 v = importlib.import_module("run_frontier_scoring_reasoned")
 REAL_ROOT = Path(v.__file__).resolve().parents[1]
@@ -294,8 +296,8 @@ def test_source_review_requires_true_selected_role_names(paths, monkeypatch):
 
 
 def test_frozen_helpers_remain_unchanged():
-    assert v.base.file_sha(REAL_ROOT / "scripts/run_frontier_scoring_reviewed.py") == "6d3f42c3ab7d7411e2df6880aa7a8175f4334307f3bbc3c505b08e7b52c6f57b"
-    assert v.base.file_sha(REAL_ROOT / "scripts/run_frontier_scoring_v3.py") == "f389c9093640325320f5ed7306fd0151f87f88506878bbb5dda1e45d909cc2f2"
+    assert historical_sha("run_frontier_scoring_reviewed.py") == "6d3f42c3ab7d7411e2df6880aa7a8175f4334307f3bbc3c505b08e7b52c6f57b"
+    assert historical_sha("run_frontier_scoring_v3.py") == "f389c9093640325320f5ed7306fd0151f87f88506878bbb5dda1e45d909cc2f2"
 
 
 @pytest.mark.parametrize("qwen_score,phi_score,accepted", [(1., .875, True), (.89, .875, False), (.95, 1., False)])

@@ -38,13 +38,13 @@ from pbpk_kb.web.provenance import blueprint_evidence_url
 ROOT = Path(__file__).resolve().parents[3]
 FROZEN = ROOT / 'experiments/blueprint_design/sampling_stability_20261009'
 RUN = ROOT / 'runtime/deployment/workspace/blueprints'
-METHOD = '人体模板＋药物证据＋四参数校准＋时间覆盖补证与可行性修复'
+METHOD = 'Human physiology + drug evidence + four-parameter calibration + temporal coverage and feasibility repair'
 LIMITATIONS = [
-    '当前交互范围为已整理的 30 药、成人、单药、单次静脉给药；默认使用案例的预测条件。',
-    '新人体条件必须随对应开发观测数据一起提供；18–80 岁仅为人体构建的输入边界，不代表已有校准或验证覆盖。',
-    '结果为研究模型预测，改变人体或给药条件不等于完成了新场景的独立科学验证。',
-    '开发曲线校准与独立评价分开；未上传开发数据时复用已保存的校准参数。',
-    '终末参数仅在数值质量检查通过时报告；缺少独立临床参考的终点不声称已验证。',
+    'Interactive use covers 30 curated drugs in adults, with one drug and one intravenous dose. Case prediction conditions are used by default.',
+    'New human conditions require corresponding development observations. Ages 18–80 define construction input bounds, not calibration or validation coverage.',
+    'Results are research model predictions. Changing physiology or dosing does not establish independent scientific validation for a new scenario.',
+    'Development-curve calibration is separate from independent evaluation. Saved calibration parameters are reused when no development data are uploaded.',
+    'Terminal parameters are reported only after numerical quality checks. Endpoints without independent clinical references are not claimed as validated.',
 ]
 router = APIRouter(prefix='/workspace', tags=['workspace-blueprints'])
 _pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix='pbpk-blueprint')
@@ -60,16 +60,16 @@ def _path(value: str | Path) -> Path:
         raw = ROOT / raw
     # Reject lexically before following symlinks outside this project.
     if not raw.is_relative_to(ROOT) or '..' in raw.parts:
-        raise ValueError('来源路径不在本项目范围内')
+        raise ValueError('Source path is outside this project')
     path = raw.resolve()
     if not path.is_relative_to(ROOT):
-        raise ValueError('来源路径超出项目范围')
+        raise ValueError('Source path escapes the project boundary')
     return path
 
 
 def _bytes(path: str, modified: int, size: int) -> bytes:
     if size > 64 * 1024 * 1024:
-        raise ValueError('输入文件超过交互读取上限')
+        raise ValueError('Input file exceeds the interactive read limit')
     return Path(path).read_bytes()
 
 
@@ -78,7 +78,7 @@ def _read(path, digest=None):
     st = path.stat()
     data = _bytes(str(path), st.st_mtime_ns, st.st_size)
     if digest and hashlib.sha256(data).hexdigest() != digest:
-        raise ValueError('来源文件校验失败：' + path.name)
+        raise ValueError('Source file verification failed: ' + path.name)
     return json.loads(data)
 
 
@@ -90,7 +90,7 @@ def _source_bytes(reference):
     path = _path(reference['path']); st = path.stat()
     content = _bytes(str(path), st.st_mtime_ns, st.st_size)
     if hashlib.sha256(content).hexdigest() != reference['sha256']:
-        raise ValueError('证据来源校验失败：' + path.name)
+        raise ValueError('Evidence source verification failed: ' + path.name)
     return content
 
 
@@ -116,7 +116,7 @@ def _save(path, data):
 def _catalog():
     state = _read(FROZEN / 'state.json')
     if state['status'] != 'complete':
-        raise ValueError('蓝图主线结果尚未完成，不能作为交互基础')
+        raise ValueError('The primary blueprint result is incomplete and cannot support interactive use')
     protocol = _ref(state['protocol'])
     source = _ref(protocol['source_protocol'])
     choices = _ref(protocol['choices'])['choices']
@@ -127,7 +127,7 @@ def _case(case_id):
     state, protocol, source, choices = _catalog()
     matches = [c for c in protocol['cases'] if c['case_id'] == case_id]
     if len(matches) != 1:
-        raise HTTPException(404, '未找到该蓝图案例')
+        raise HTTPException(404, 'Blueprint case not found')
     return matches[0], state, source, choices
 
 
@@ -137,7 +137,7 @@ def _bundle(case_id, regime='late_four'):
     reference = state['units'][choice['unit_id']]['result']
     fitted = _ref(reference)
     if fitted['status'] != 'predicted':
-        raise ValueError('该案例没有可用的已锁定参数')
+        raise ValueError('No usable locked parameters exist for this case')
     request = EvidenceBlueprintRequest.model_validate(_ref(fitted['request'])).model_dump(mode='json', exclude_none=True)
     formula = fitted['formula']
     physref = source['physiology_cache'][f'{case_id}__target__{formula}']
@@ -149,7 +149,7 @@ def _bundle(case_id, regime='late_four'):
     for relative, sha in physiology['source_pins'].items():
         p = _path(relative); st = p.stat()
         if hashlib.sha256(_bytes(str(p), st.st_mtime_ns, st.st_size)).hexdigest() != sha:
-            raise ValueError('人体生理来源校验失败：' + p.name)
+            raise ValueError('Human physiology source verification failed: ' + p.name)
     return dict(case=case, request=request, physiology=physiology, fitted=fitted,
                 choice=choice, result_reference=reference, physiology_reference=physref,
                 saved_curve=_ref(fitted['prediction']), training=_ref(fitted['training']))
@@ -195,7 +195,7 @@ def _sources(bundle):
     for e in bundle['request']['evidence']:
         url = _source_link(bundle, e)
         if url and url not in seen:
-            result.append({'label': '参数证据原文 PDF' if url.startswith('/') else '参数来源', 'url': url})
+            result.append({'label': 'Parameter evidence PDF' if url.startswith('/') else 'Parameter source', 'url': url})
             seen.add(url)
     return result[:30]
 
@@ -222,8 +222,8 @@ def _presentation(bundle, request=None, curve=None, parameters=None, calibration
     pars = parameters or bundle['fitted']['parameters']
     mw = next(float(e['value']) for e in req['evidence'] if e['parameter'] == 'molecular_weight')
     phys = bundle['physiology']
-    names = [('clearance_scale','非肾清除率倍率'),('partition_scale','组织分配倍率'),
-             ('bidirectional_exchange_scale','双向交换倍率'),('blood_partition_scale','血细胞分配倍率')]
+    names = [('clearance_scale','Nonrenal clearance multiplier'),('partition_scale','Tissue partition multiplier'),
+             ('bidirectional_exchange_scale','Bidirectional exchange multiplier'),('blood_partition_scale','Blood cell partition multiplier')]
     evidence = _evidence_rows(bundle, req)
     summary = summarize_extended_prediction(curve, req)
     visible = summary['endpoints']['plasma_concentration_time']
@@ -233,10 +233,10 @@ def _presentation(bundle, request=None, curve=None, parameters=None, calibration
             'method': METHOD, 'request': {k: req[k] for k in ('human','dosing','target','partition_method')},
             'structure': {'organ_count': len(phys['organs']),
                 'organs': [{k: r[k] for k in ('name','volume_l','flow_l_h')} for r in phys['organs']],
-                'processes': ['动脉、静脉与门静脉循环','15 个器官的血管—组织交换','组织与血细胞分配',
-                              '肾清除及非肾清除','静脉给药与血浆浓度输出']},
+                'processes': ['Arterial, venous, and portal circulation','Vascular–tissue exchange in 15 organs','Tissue and blood cell partitioning',
+                              'Renal and nonrenal clearance','Intravenous dosing and plasma concentration output']},
             'parameters': [{'name': k,'label': label,'value': pars['parameters'][k],
-                            'unit': '倍','basis': 'development_calibrated'} for k,label in names],
+                            'unit': 'fold','basis': 'development_calibrated'} for k,label in names],
             'evidence': evidence, 'sources': _sources(bundle),
             'curve': _display_curve(display_curve, mw), 'endpoints': summary['endpoints'],
             'endpoint_summary': summary,
@@ -244,8 +244,8 @@ def _presentation(bundle, request=None, curve=None, parameters=None, calibration
                 'added_time_h': bundle['choice']['time_h'], 'development_gmfe': pars.get('development_gmfe'),
                 'human': deepcopy(bundle['training']['human']), 'dosing': deepcopy(bundle['training']['dosing']),
                 'study_id': bundle['training'].get('study_id'),
-                'source_label': bundle['training'].get('source_label') or bundle['training'].get('study_id') or '已有开发研究',
-                'source': '已保存的时间覆盖补证与容量修复分支；非新训练'},
+                'source_label': bundle['training'].get('source_label') or bundle['training'].get('study_id') or 'Existing development study',
+                'source': 'Saved temporal-coverage and capacity-repair branch; no new training'},
             'human_context': {'changed': False, 'reference_human': deepcopy(req['human']),
                 'reference_kind': 'case_target',
                 'active_human': deepcopy(req['human']), 'physiology_source': 'case',
@@ -280,13 +280,13 @@ class DevelopmentCurve(BaseModel):
     @model_validator(mode='after')
     def validate_curve(self):
         if self.source_url and not _safe_url(self.source_url):
-            raise ValueError('开发曲线来源仅接受 HTTP(S) 网页链接')
+            raise ValueError('Development-curve source must be an HTTP(S) URL')
         if any(b.time_h <= a.time_h for a,b in zip(self.observations, self.observations[1:])):
-            raise ValueError('开发曲线时间必须严格递增')
+            raise ValueError('Development-curve times must increase strictly')
         if self.infusion_minutes / 60 >= self.observations[-1].time_h:
-            raise ValueError('开发曲线必须包含输注完成后的观测')
+            raise ValueError('Development curve must include observations after infusion ends')
         if self.infusion_minutes and self.observations[0].time_h == 0:
-            raise ValueError('输注前零时刻不能有正浓度')
+            raise ValueError('A positive concentration is not allowed at time zero before infusion')
         return self
 
 
@@ -303,9 +303,9 @@ class PredictionRequest(BaseModel):
     @model_validator(mode='after')
     def valid_window(self):
         if self.infusion_minutes / 60 >= self.window_end_h:
-            raise ValueError('预测时间窗必须超过输注完成时间')
+            raise ValueError('Prediction window must extend beyond the end of infusion')
         if self.human is not None and self.development_curve is not None and self.human != self.development_curve.human:
-            raise ValueError('新预测人体必须与开发观测数据声明的人体条件一致')
+            raise ValueError('Prediction human conditions must match the conditions declared for the development observations')
         return self
 
 
@@ -315,7 +315,7 @@ def _effective_human(body, bundle):
     if declared is not None:
         human.update(declared.model_dump())
     if human != bundle['request']['human'] and body.development_curve is None:
-        raise ValueError('修改人体条件需提供该人体对应的开发观测曲线；没有新观测数据时请使用案例默认条件')
+        raise ValueError('Changed human conditions require matching development observations; use the case defaults when no new observations are available')
     return human
 
 
@@ -324,7 +324,7 @@ def _run_prediction(body, bundle, update, output=None):
     deadline = begin + 180
     def guard():
         if time.monotonic() > deadline:
-            raise TimeoutError('超过本阶段计算时限；任务已停止，不会后台持续重试')
+            raise TimeoutError('The stage time limit was exceeded; the job has stopped without background retries')
     req = deepcopy(bundle['request'])
     req['human'] = _effective_human(body, bundle)
     human_changed = req['human'] != bundle['request']['human']
@@ -338,12 +338,12 @@ def _run_prediction(body, bundle, update, output=None):
     physiology = bundle['physiology']
     if human_changed:
         if output is None:
-            raise ValueError('自定义人体需要独立的项目运行目录')
+            raise ValueError('Custom human conditions require a separate project run directory')
         # Each native subprocess has its own timeout and byte limit. Construction,
         # administration audit and physiology export together get 600 s; fitting
         # and prediction get a separate 180 s budget after construction completes.
         deadline = begin + 600
-        update('building_human', '正在按新人体条件计算器官体积、血流量及分配参数')
+        update('building_human', 'Calculating organ volumes, blood flows, and partition parameters for the new human conditions')
         physiology = rebuild_physiology(req, _path(output), ROOT, before_trial=guard)
         guard()
         deadline = time.monotonic() + 180
@@ -355,7 +355,7 @@ def _run_prediction(body, bundle, update, output=None):
         'physiology_source': 'rebuilt' if human_changed else 'case',
         'calibration_mode': 'case_saved'}
     if body.development_curve:
-        update('calibrating', '正在用上传的开发曲线校准四参数')
+        update('calibrating', 'Calibrating four parameters against the uploaded development curve')
         dev = body.development_curve
         fit_req = deepcopy(req)
         # Metadata is explicitly declared with the observations and validated
@@ -373,16 +373,16 @@ def _run_prediction(body, bundle, update, output=None):
         fitted = fitter.fit(lambda x,t: model.simulate(physiology, fit_req, t, x),
             fit_req, training, physiology, budget=4096, starts=4, before_trial=guard)
         if not fitted['best']:
-            raise ValueError('在固定范围和计算预算内未得到可行的开发曲线拟合')
+            raise ValueError('No feasible development-curve fit was found within the fixed bounds and computation budget')
         parameters = fitted['best']
         calibration = {'mode':'user_development','visible_points':len(dev.observations),
-            'source_label':dev.source_label,'source_url':dev.source_url,'source': '用户提供的开发曲线',
+            'source_label':dev.source_label,'source_url':dev.source_url,'source': 'User-provided development curve',
             'human': deepcopy(training['human']), 'dosing': deepcopy(training['dosing']),
             'development_gmfe':parameters['development_gmfe'], 'calls':fitted['calls'],
-            'max_calls':4096,'starts':4,'formula_selection':'预先固定，未根据目标结果选择',
+            'max_calls':4096,'starts':4,'formula_selection':'Fixed in advance, not selected using target outcomes',
             'target_observations_used':False,'fit':fitted}
         human_context['calibration_mode'] = 'development_refit'
-    guard(); update('predicting', '正在构建目标给药方案并求解浓度曲线')
+    guard(); update('predicting', 'Building the target regimen and solving the concentration curve')
     end = body.window_end_h
     # Bounded dense grid with early distribution and exact infusion discontinuity.
     times = np.unique(np.r_[0., np.geomspace(min(1e-5,end/10000),end,700),
@@ -423,13 +423,13 @@ def _worker(job_id, body, bundle):
         _save(path.parent/'blueprint.json', package)
         doc = _read(path)
         result['download_url'] = f'/api/workspace/blueprint-predictions/{job_id}/download'
-        doc.update(status='completed',stage='completed',stage_label='蓝图与预测已生成',
+        doc.update(status='completed',stage='completed',stage_label='Blueprint and prediction generated',
                    completed_at=time.time(),result=result,download_url=result['download_url'])
         _save(path,doc)
     except Exception as exc:
         doc = _read(path)
-        message = str(exc) if isinstance(exc,(ValueError,TimeoutError,OSError,HTTPException)) else '计算失败，请检查输入与本项目服务日志'
-        doc.update(status='failed',stage='failed',stage_label='生成未完成',error=message,completed_at=time.time())
+        message = str(exc) if isinstance(exc,(ValueError,TimeoutError,OSError,HTTPException)) else 'Computation failed; check the inputs and this project service log'
+        doc.update(status='failed',stage='failed',stage_label='Generation incomplete',error=message,completed_at=time.time())
         _save(path,doc)
     finally:
         _slots.release()
@@ -438,10 +438,10 @@ def _worker(job_id, body, bundle):
 def _load_job(job_id):
     path = _job_path(job_id)
     if not path.is_file():
-        raise HTTPException(404,'蓝图任务不存在')
+        raise HTTPException(404,'Blueprint job not found')
     result = _read(path)
     if result['status'] in ('queued','running') and result.get('service_instance') != _incarnation:
-        result.update(status='interrupted',stage='interrupted',error='服务重启中断了该任务，请重新提交')
+        result.update(status='interrupted',stage='interrupted',error='Service restart interrupted this job; please submit again')
     result.pop('service_instance',None)
     return result
 
@@ -476,7 +476,7 @@ def case_detail(case_id: str, regime: Regime='late_four'):
 @router.post('/blueprint-predictions',status_code=202)
 def create_prediction(body: PredictionRequest):
     if not _slots.acquire(blocking=False):
-        raise HTTPException(429,'已有两个蓝图任务运行中，完成后可继续提交')
+        raise HTTPException(429,'Two blueprint jobs are already running; submit again after they finish')
     try:
         bundle = _bundle(body.case_id,body.regime)
         try:
@@ -486,9 +486,9 @@ def create_prediction(body: PredictionRequest):
         with _guard:
             RUN.mkdir(parents=True,exist_ok=True,mode=0o700)
             if sum(1 for _ in RUN.glob('*/job.json')) >= 200:
-                raise HTTPException(409,'已保存 200 个交互任务；请先导出并整理项目蓝图运行目录')
+                raise HTTPException(409,'The 200-job storage limit has been reached; export and organize the project blueprint run directory first')
             job_id = str(uuid4())
-            doc = {'job_id':job_id,'status':'queued','stage':'queued','stage_label':'等待开始',
+            doc = {'job_id':job_id,'status':'queued','stage':'queued','stage_label':'Waiting to start',
                    'drug':bundle['case']['drug'],'created_at':time.time(),'input':body.model_dump(),
                    'service_instance':_incarnation,'status_url':f'/api/workspace/blueprint-predictions/{job_id}'}
             _save(_job_path(job_id),doc)
@@ -543,7 +543,7 @@ def _download(package, stem, format):
         with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as archive:
             archive.writestr('blueprint.json',blob)
             archive.writestr('concentration.csv',_csv(package))
-            archive.writestr('README.txt','研究用 PBPK 蓝图包\n在本项目环境中执行 python replay.py 可重算浓度曲线。\n参数、证据、生理结构和输入保存在 blueprint.json。\n本包复用既有四参数求解器；不表示独立科学验证或临床适用许可。\n')
+            archive.writestr('README.txt','Research PBPK blueprint package\nRun python replay.py in the project environment to recompute the concentration curve.\nParameters, evidence, physiology, and inputs are stored in blueprint.json.\nThis package reuses the existing four-parameter solver; it does not establish independent scientific validation or permission for clinical use.\n')
             archive.writestr('replay.py',"from pathlib import Path\nimport json\nfrom pbpk_kb.blueprint_policy.blood_partition_calibration import simulate\np=json.loads(Path('blueprint.json').read_text())\nr=simulate(p['physiology'],p['request'],[t/60 for t in p['curve']['time_min']],p['parameters']['log_parameters'])\nPath('replayed_prediction.json').write_text(json.dumps(r, default=lambda x: x.tolist(), allow_nan=False))\n")
             for name in ('blood_partition_calibration.py','permeability_model.py','perfusion_model.py',
                          'perfusion_calibration.py','distribution_calibration_optimizer.py','visible_partition_feasibility.py'):
@@ -556,7 +556,7 @@ def _download(package, stem, format):
 def download_prediction(job_id:UUID,format:Literal['json','csv','zip']='zip'):
     job=_load_job(job_id)
     if job['status']!='completed':
-        raise HTTPException(409,'蓝图任务尚未完成')
+        raise HTTPException(409,'Blueprint job is not complete')
     return _download(_read(_job_path(job_id).parent/'blueprint.json'),f'blueprint-{job_id}',format)
 
 
@@ -580,4 +580,4 @@ def case_source_pdf(case_id: str, source_hash: str):
             path = _path(ref['path'])
             return FileResponse(path, media_type='application/pdf', filename=path.name,
                                 content_disposition_type='inline')
-    raise HTTPException(404, '该案例未登记此 PDF 来源')
+    raise HTTPException(404, 'This case has no registered reference to this PDF')

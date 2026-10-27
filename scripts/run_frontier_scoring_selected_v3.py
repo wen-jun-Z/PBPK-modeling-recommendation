@@ -236,22 +236,22 @@ def stages():
 
 def publish_summary():
     folder = ROOT / "experiments/model_recommendation/results_summary"
-    link = folder / "07_合格裁判证据评分"
+    link = folder / "07_qualified_judge_assessment"
     if not link.exists(): link.symlink_to(os.path.relpath(ASSESS, folder), target_is_directory=True)
     path = folder / "README.md"
     text = path.read_text()
     first, last = "<!-- selected-v3:start -->", "<!-- selected-v3:end -->"
     state, worker = base.read(RUN / "pipeline_status.json", {}), base.read(RUN / "status.json", {})
     judge = worker.get("judge")
-    progress = (f"{'主评分' if judge == 'primary' else '5% 复判'}已提交：{worker.get('committed_pairs', 0):,}/"
-                f"{worker.get('expected_pairs', 216160):,}。" if judge in {"primary", "secondary"} else "全量评分尚未启动。")
-    block = (f"{first}\n## 合格裁判证据评分 v3\n\n更新：{base.now()}；阶段：`{state.get('stage', 'prepare')}`；"
-        f"状态：`{state.get('state', 'preparing')}`。{progress}\n\n"
-        "保留 Phi v3 未通过准入的全部记录；Qwen3.6-27B 必须通过相同的三组控制、代表原文检查与 39 例来源复核后才可主评分。"
-        "Phi-4 仅作固定 5% 敏感性复判，未通过主裁判准入。复用经哈希核验的 733×2 条预检输出，全量标签独立重新生成；"
-        "无证据和失败保持未知，原 10% 质量停止规则不变。自动来源支持评分不等于专家金标准。\n\n"
-        "[状态与结果](07_合格裁判证据评分/)；命令：`runtime/app-env/bin/python scripts/run_frontier_scoring_selected_v3.py "
-        f"status` / `stop` / `start`。SSH 断开后继续。\n{last}")
+    progress = (f"{'Primary assessment' if judge == 'primary' else '5% repeat judgment'} — committed: {worker.get('committed_pairs', 0):,}/"
+                f"{worker.get('expected_pairs', 216160):,}. " if judge in {"primary", "secondary"} else "Full assessment has not started.")
+    block = (f"{first}\n## Qualified-judge evidence assessment v3\n\nUpdated: {base.now()}; Stage: `{state.get('stage', 'prepare')}`; "
+        f"Status: `{state.get('state', 'preparing')}`. {progress}\n\n"
+        "All failed Phi v3 admission records remain. Qwen3.6-27B must pass the same three control groups, representative-source checks, and 39-case review before primary assessment. "
+        "Phi-4 is only the fixed 5% sensitivity reviewer and did not qualify as primary judge. The hash-verified 733x2 precheck outputs are reused; full labels are generated separately. "
+        "Absent evidence and failures remain unknown; the original 10% quality-stop rule is unchanged. Automatic source-support assessment is not an expert gold standard.\n\n"
+        "[Status and results](07_qualified_judge_assessment/); Command: `runtime/app-env/bin/python scripts/run_frontier_scoring_selected_v3.py "
+        f"status` / `stop` / `start`. Continues after SSH disconnects.\n{last}")
     if first in text:
         if last not in text: raise ValueError("Incomplete README markers")
         text = text[:text.index(first)] + block + text[text.index(last)+len(last):]

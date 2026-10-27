@@ -78,7 +78,7 @@ def test_active_duplicate_returns_current_job_and_other_request_is_blocked(tmp_p
     directory = tmp_path / job_id
     directory.mkdir()
     rec.write(directory / 'status.json', {'job_id': job_id, 'status': 'running', 'stage': 'ranking',
-        'message': '运行中', 'created_epoch': time.time(), 'request_sha256': digest,
+        'message': 'Running', 'created_epoch': time.time(), 'request_sha256': digest,
         'pid': 123, 'start_ticks': '456'})
     rec.write(tmp_path / 'current.json', {'job_id': job_id})
     monkeypatch.setattr(rec, 'process_ticks', lambda pid: '456')

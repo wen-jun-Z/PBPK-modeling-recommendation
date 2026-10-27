@@ -310,14 +310,14 @@ def report():
     save(RUN/'results.json',result)
     with (RUN/'results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
-    lines=['# 研究条件约束的参数成组选择：小规模验证','',f'实际临床药物：{len(protocol["cases"])}。所有预测先锁定，再读取目标观测；未修改论文。','',
+    lines=['# Study-condition-constrained grouped parameter selection: pilot evaluation','',f'Clinical drugs: {len(protocol["cases"])}. All predictions are locked before target observations are read; the manuscript is unchanged.','',
         '| Drug | Sampling | Method | Curve GMFE | Status |','|---|---|---|---:|---|']
     for r in scored:
         g=r['curve_metrics'].get('gmfe');lines.append(f'| {r["drug"]} | {r["sampling"]} | {r["method"]} | {g:.4f}'+' | '+r['status']+' |' if g else f'| {r["drug"]} | {r["sampling"]} | {r["method"]} | — | {r["status"]} |')
-    lines+=['','全部11类输出与有参考项的误差见[唯一结果表](results.csv)，候选、失败及实际调用量见[机器结果](results.json)。',
-        '', '相同单条适用门限用于全部方法；明确肝损害证据被共同排除，不算新方法收益。新方法和无约束搜索每药/采样允许4096次目标函数调用、16起点，包含有限差分与失败；实际提前收敛调用数不同。原论文PBPK/两室仅作准确率参照，预算更大。',
-        '', '同臂群体CL/fu不代表个体参数相关性。这些病例已参与开发，样本不足以证明普遍优势或临床安全。缺临床参考与不可估尾部保留空值。',
-        '', '命令：`runtime/app-env/bin/python -B scripts/run_condition_matched_selection.py status|report|cleanup`。']
+    lines+=['','All 11 outputs and available-reference errors are in the [single result table](results.csv); candidates, failures, and actual calls are in [machine-readable results](results.json).',
+        '', 'All methods share the same item-level applicability gates. Explicit hepatic-impairment evidence is excluded by all methods and is not a new-method benefit. The new method and unconstrained search allow 4096 objective calls and 16 starts per drug/sampling condition, counting finite differences and failures. Early convergence changes actual calls. Manuscript PBPK and two-compartment results are accuracy references with larger budgets.',
+        '', 'Study-arm population CL/fu does not establish individual parameter correlations. These development cases are too few to establish general superiority or clinical safety. Absent clinical references and unreliable tails remain empty.',
+        '', 'Command: `runtime/app-env/bin/python -B scripts/run_condition_matched_selection.py status|report|cleanup`.']
     (RUN/'README.md').write_text('\n'.join(lines)+'\n')
     state.update(status='complete',reported_at=time.time());save(RUN/'state.json',state)
     return {'status':'complete','drugs':len(protocol['cases']),'units':len(scored),'table_rows':len(rows),'comparisons':comparisons}

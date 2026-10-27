@@ -210,31 +210,31 @@ def run(args):
 
 
 def write_report(output, summary, evaluations):
-    lines = ["# 完整来源 PBPK 模型适配：小规模评估", "",
-             f"8 场景计划；实际 {summary['case_count']} 个场景、{summary['native_attempts']} 次原生执行。"
-             f"工程检查通过 {summary['engineering_passed']}/{summary['case_count']}。", "",
-             "方法保留完整的人体与药物机制，只修改请求涉及的设置；不重新拟合参数。"
-             "官方对应仿真作为工程参考。历史观测用于开发回归，不是独立盲测，也不能证明优于原模型。", "",
-             "| 场景 | 原生运行 | 请求读回 | 与官方目标曲线一致 |", "|---|---|---|---|"]
+    lines = ['# Complete-source PBPK model adaptation: pilot evaluation', "",
+             f"Eight scenarios planned; actually {summary['case_count']} scenarios and {summary['native_attempts']} native executions. "
+             f"Engineering checks passed for {summary['engineering_passed']}/{summary['case_count']}. ", "",
+             'The method retains complete human and drug mechanisms, changes only requested settings, and does not refit parameters. '
+             'Corresponding official simulations are engineering references. Historical observations support development regression, not independent blinded validation or superiority over the original model.', "",
+             '| Scenario | Native execution | Request readback | Matches official target curve |', "|---|---|---|---|"]
     for row in summary["cases"]:
-        yn = lambda value: "通过" if value else "未通过"
+        yn = lambda value: 'Pass' if value else 'Fail'
         lines.append(f"| {row['case_id']} | {yn(row['native_accepted'])} | {yn(row['readback_accepted'])} | {yn(row['fidelity']['accepted'])} |")
-    lines += ["", "数值一致条件：完整原生时间网格必须相同，最大差异 ≤ 1e-10 µmol/L + 官方峰值 × 1e-6。", "",
-              "| 历史观测 | 曲线对数 RMSE | 平均倍数误差 GMFE | AUC 误差倍数 | 采样 Cmax 误差倍数 |", "|---|---|---|---|---|"]
+    lines += ["", 'Numerical agreement requires identical complete native time grids and maximum difference <= 1e-10 micromol/L + official peak x 1e-6.', "",
+              '| Historical observations | Curve log-RMSE | Geometric mean fold error | AUC fold error | Sampled Cmax fold error |', "|---|---|---|---|---|"]
     for arm, evaluation in evaluations.items():
         for row in evaluation["rows"]:
             if arm != "adapted":
                 continue
-            fmt = lambda x: f"{x:.3f}" if x is not None else "不可评分"
+            fmt = lambda x: f"{x:.3f}" if x is not None else 'Not scorable'
             folds = [math.exp(row["endpoints"][key]["absolute_log_error"])
                      if row["endpoints"][key] else None for key in ("observed_window_auc", "sampled_cmax")]
             lines.append(f"| {row['scenario_id']} | {fmt(row['log_rmse'])} | {fmt(row['gmfe'])} | {fmt(folds[0])} | {fmt(folds[1])} |")
-    lines += ["", "倍数误差越接近 1 越好；不把不同指标相加。Rifampicin 的 Nitti/Acocella 数据沿用来源中的 serum→plasma 映射假设，未建立严格的基质一致性。", "",
-              "历史曲线评分见 evaluation_adapted.json 与 evaluation_official_reference.json。"
-              "AUC 仅积分观测时间窗，Cmax 为观测采样时点峰值；不是 AUC∞ 或连续峰值。", "",
-              "保留 protocol.json、blueprints.json、逐例原生 PKML/曲线和读回结果。全部失败均保留。", "",
-              "尚未验证：新药从零构建、疾病人群、新机制自动添加、参数校准和独立外部预测优势。", "",
-              "本轮不调用 LLM。OSP 原生 ODE 使用 CPU 并行，未声称使用 GPU 求解。"]
+    lines += ["", 'Fold error closer to 1 is better; different metrics are not added together. Rifampicin Nitti/Acocella data retain the source serum-to-plasma mapping assumption; strict matrix equivalence is not established.', "",
+              'Historical curve scores are in evaluation_adapted.json and evaluation_official_reference.json. '
+              'AUC integrates only the observation window and Cmax is the peak at observed sampling times, not AUC infinity or the continuous peak.', "",
+              'protocol.json, blueprints.json, per-case native PKML/curves, and readback results are retained, including all failures.', "",
+              'Not yet validated: de novo new-drug construction, disease populations, automatic addition of mechanisms, parameter calibration, or independent external predictive superiority.', "",
+              'No LLM is called. OSP native ODE simulations run in parallel on CPU; GPU solving is not claimed.']
     (output / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

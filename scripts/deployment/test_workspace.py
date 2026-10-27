@@ -42,35 +42,35 @@ def check_saved_components(page):
     saved=response.json()
     assert saved, 'No saved component recommendations returned'
     page.locator('nav a[href="#recommend"]').click()
-    page.get_by_role('button',name='组件推荐',exact=True).click()
+    page.get_by_role('button',name='Component recommendations',exact=True).click()
     form=page.locator('#component-form')
     form.locator('[name="compound"]').select_option('midazolam')
     form.locator('[name="objective"]').select_option('base_pk')
     form.locator('[name="route"]').select_option('oral')
-    form.get_by_role('button',name='查找组件推荐 →').click()
+    form.get_by_role('button',name='Find component recommendations →').click()
     expected=[r for r in saved if r['compound_name'].lower()=='midazolam'
               and r['objective']=='base_pk' and r['request_json'].get('route')=='oral']
     buttons=page.locator('#main button[data-action="component-detail"]')
     expect(buttons).to_have_count(len(expected))
     assert set(buttons.evaluate_all('(nodes)=>nodes.map(n=>n.dataset.id)'))=={
         r['recommendation_result_id'] for r in expected}
-    expect(page.locator('#main thead')).to_contain_text('适用场景')
-    expect(page.locator('#main thead')).to_contain_text('保存时间')
+    expect(page.locator('#main thead')).to_contain_text('Study scenario')
+    expect(page.locator('#main thead')).to_contain_text('Saved at')
     for r in expected:
         row=page.locator(f'#main tr:has(button[data-id="{r["recommendation_result_id"]}"])')
-        expect(row).to_contain_text('口服')
-        expect(row).to_contain_text('人类')
+        expect(row).to_contain_text('Oral')
+        expect(row).to_contain_text('Human')
         expect(row).to_contain_text(r['created_at'][:19].replace('T',' ')+' UTC')
     record('browser_component_request_filters_and_saved_scenarios',matched=len(expected))
 
     # Inspect all preserved records, including the two similarly named oral requests.
     for field in ('compound','objective','route'):
         form.locator(f'[name="{field}"]').select_option('')
-    form.get_by_role('button',name='查找组件推荐 →').click()
+    form.get_by_role('button',name='Find component recommendations →').click()
     expect(buttons).to_have_count(len(saved))
-    names={'absorption':'吸收','distribution':'分布','excretion':'排泄与清除',
-           'metabolism':'代谢','physicochemical':'理化性质','ddi':'药物相互作用',
-           'special_population':'特殊人群','public_model_template':'公共模型模板','transport':'转运'}
+    names={'absorption':'Absorption','distribution':'Distribution','excretion':'Excretion and clearance',
+           'metabolism':'Metabolism','physicochemical':'Physicochemical properties','ddi':'Drug interactions',
+           'special_population':'Special populations','public_model_template':'Public model template','transport':'Transport'}
     cards_checked=parameters_checked=0
     for r in saved:
         rid=r['recommendation_result_id']
@@ -81,16 +81,16 @@ def check_saved_components(page):
         expect(page.locator('#detail')).to_be_visible()
         body=page.locator('#detail-body')
         expect(body.locator('.component-card')).to_have_count(len(d['component_recommendations']))
-        expect(body).to_contain_text('尚未完成校准或仿真验证')
+        expect(body).to_contain_text('have not yet been calibrated or validated in simulation')
         expect(body.locator('pre')).to_have_count(0)
         assert '[object Object]' not in body.inner_text()
         structure=d.get('recommended_model_structure') or {}
         if not structure.get('required_compartments'):
-            assert '涉及房室' not in body.locator('dt').all_text_contents()
+            assert 'Compartments' not in body.locator('dt').all_text_contents()
         if not d.get('metabolism_pathways'):
-            assert '涉及代谢酶' not in body.locator('dt').all_text_contents()
+            assert 'Metabolic enzymes' not in body.locator('dt').all_text_contents()
         if not d.get('transport_pathways'):
-            assert '涉及转运体' not in body.locator('dt').all_text_contents()
+            assert 'Transporters' not in body.locator('dt').all_text_contents()
         for component in d['component_recommendations']:
             card=body.locator(f'.component-card[data-component="{component["component"]}"]')
             expect(card.locator('header h3')).to_have_text(names[component['component']])
@@ -98,7 +98,7 @@ def check_saved_components(page):
             card.locator('summary').click()
             expected_links=[f'/api/workspace/evidence/{x["evidence_type"]}/{x["evidence_id"]}/source'
                             for x in refs if x.get('evidence_type')]
-            links=card.get_by_role('link',name='查看来源 ↗')
+            links=card.get_by_role('link',name='View source ↗')
             expect(links).to_have_count(len(expected_links))
             assert links.evaluate_all('(nodes)=>nodes.map(n=>n.getAttribute("href"))')==expected_links
             for ref in refs:
@@ -109,7 +109,7 @@ def check_saved_components(page):
             cards_checked+=1
         parameters=d.get('parameter_candidates',[])
         section=body.locator('section.component-section').filter(
-            has=page.get_by_role('heading',name='参数候选',exact=True))
+            has=page.get_by_role('heading',name='Parameter candidates',exact=True))
         expect(section.locator('tbody tr')).to_have_count(len(parameters))
         for i,p in enumerate(parameters):
             row=section.locator('tbody tr').nth(i)
@@ -128,12 +128,12 @@ def check_saved_components(page):
             parameters_checked+=1
         # Rejected numeric bindings must not silently reappear as model parameters.
         assert len(parameters)==section.locator('tbody tr').count()
-        page.get_by_role('button',name='关闭详情').click()
+        page.get_by_role('button',name='Close details').click()
     record('browser_saved_component_details_and_evidence_bindings',records=len(saved),
            component_cards=cards_checked,parameters=parameters_checked)
 
 def check_source_link(page, link, expected_location=None):
-    expect(link).to_have_text('查看来源 ↗')
+    expect(link).to_have_text('View source ↗')
     expect(link).to_have_attribute('target', '_blank')
     expect(link).to_have_attribute(
         'href', re.compile(r'^/api/workspace/evidence/[a-z_]+/[0-9a-f-]{36}/source$')
@@ -197,9 +197,9 @@ def check_graph(page):
         page.locator('#graph-form select').select_option(cid)
         page.locator('#graph-form button').click()
         expect(page.locator('.graph-inspector h2')).to_have_text(compound['preferred_name'])
-        expect(page.locator('.graph-caption')).to_contain_text(f'{len(evidence)} 条证据')
-        expect(page.locator('.graph-caption')).to_contain_text(f'{len(models)} 个登记模型')
-        expect(page.locator('.graph-caption')).to_contain_text(f'{len(targets)} 个酶/转运体')
+        expect(page.locator('.graph-caption')).to_contain_text(f'{len(evidence)} evidence records')
+        expect(page.locator('.graph-caption')).to_contain_text(f'{len(models)} registered models')
+        expect(page.locator('.graph-caption')).to_contain_text(f'{len(targets)} enzymes/transporters')
         expect(page.locator('.graph-node.source')).to_have_count(len(sources))
         categories={n['properties']['evidence_type'] for n in evidence}
         expect(page.locator('.graph-node.evidence')).to_have_count(len(categories))
@@ -217,7 +217,7 @@ def check_graph(page):
 
         check_geometry()
         edge_titles=page.locator('.graph-edge title').all_text_contents()
-        assert sum(int(re.search(r' · (\d+) 条关联记录$', t).group(1)) for t in edge_titles)==len(graph['edges'])
+        assert sum(int(re.search(r' · (\d+) linked records$', t).group(1)) for t in edge_titles)==len(graph['edges'])
 
         # Classification and pagination must retain every original evidence ID.
         visited=[]
@@ -226,7 +226,7 @@ def check_graph(page):
             members=[n for n in evidence if n['properties']['evidence_type']==category]
             node=page.locator(f'.graph-node[data-node="group:evidence:{category}"]')
             node.click()
-            expect(page.locator('.graph-inspector .graph-description')).to_have_text(f'{len(members)} 条证据')
+            expect(page.locator('.graph-inspector .graph-description')).to_have_text(f'{len(members)} evidence records')
             expect(page.locator('.graph-records button')).to_have_count(min(6,len(members)))
             page.locator('[data-graph-action="expand"]').click()
             expect(page.locator('.graph-evidence-controls select')).to_have_value(category)
@@ -256,7 +256,7 @@ def check_graph(page):
         assert len(visited)==len(evidence)==len(set(visited))
         select=page.locator('.graph-evidence-controls select')
         select.select_option('')
-        expect(page.locator('.graph-page-status')).to_contain_text(f'1–8 / {len(evidence)} 条')
+        expect(page.locator('.graph-page-status')).to_contain_text(f'1–8 / {len(evidence)} records')
         expect(page.locator('[data-graph-action="prev"]')).to_be_disabled()
         page.locator('[data-graph-action="next"]').click()
         expect(page.locator('.graph-page-status')).to_contain_text('9–16')
@@ -268,10 +268,10 @@ def check_graph(page):
     page.locator('[data-graph-action="overview"]').click()
     svg=page.locator('.graph-svg')
     initial=svg.get_attribute('viewBox')
-    page.get_by_role('button',name='放大图谱',exact=True).click()
+    page.get_by_role('button',name='Zoom in',exact=True).click()
     expect(page.locator('.graph-zoom')).to_have_text('125%')
     assert svg.get_attribute('viewBox')!=initial
-    page.get_by_role('button',name='缩小图谱',exact=True).click()
+    page.get_by_role('button',name='Zoom out',exact=True).click()
     expect(page.locator('.graph-zoom')).to_have_text('100%')
     svg.focus();svg.press('+')
     expect(page.locator('.graph-zoom')).to_have_text('125%')
@@ -303,7 +303,7 @@ def check_graph(page):
     record('graph_zoom_pan_reset_and_keyboard')
 
     with page.expect_download() as info:
-        page.get_by_role('button',name='下载完整图谱').click()
+        page.get_by_role('button',name='Download complete graph').click()
     path=RUN/'downloads/graph.json';info.value.save_as(str(path))
     exported=json.loads(path.read_text())
     assert exported==graphs[-1]
@@ -322,9 +322,9 @@ def check_graph(page):
     page.route(url,lambda route:route.fulfill(json={'nodes':[],'edges':[],'counts':{}}))
     page.locator('#graph-form button').click()
     expect(page.locator('.graph-node')).to_have_count(0)
-    expect(page.locator('.graph-inspector')).to_contain_text('暂无关联节点')
+    expect(page.locator('.graph-inspector')).to_contain_text('No linked nodes')
     page.locator('[data-graph-action="evidence"]').click()
-    expect(page.locator('.graph-page-status')).to_have_text('暂无证据')
+    expect(page.locator('.graph-page-status')).to_have_text('No evidence')
     expect(page.locator('[data-graph-action="next"]')).to_be_disabled()
     expect(page.locator('[data-graph-action="prev"]')).to_be_disabled()
     page.unroute(url)
@@ -456,9 +456,9 @@ with sync_playwright() as w:
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(BASE)
     expect(page.locator('#login')).to_be_visible()
-    page.get_by_label('个人访问码',exact=True).fill(KEY)
-    page.get_by_role('button',name='进入工作台').click()
-    expect(page.locator('#main h1')).to_have_text('从证据到模型，再到预测。')
+    page.get_by_label('Personal access code',exact=True).fill(KEY)
+    page.get_by_role('button',name='Enter workspace').click()
+    expect(page.locator('#main h1')).to_have_text('From evidence to models to predictions.')
     expect(page.locator('.metric')).to_have_count(4)
     page.evaluate('document.fonts.ready')
     page.screenshot(path=str(RUN/'overview.png'),full_page=True)
@@ -475,15 +475,15 @@ with sync_playwright() as w:
         browser.close()
         print(json.dumps({'passed':len(results),'url':BASE}),flush=True)
         raise SystemExit(0)
-    for route,title in [('compounds','化合物与证据'),('models','公共模型库'),('recommend','推荐工作台'),('blueprints','模型蓝图与预测'),('graph','知识图谱')]:
+    for route,title in [('compounds','Compounds and evidence'),('models','Public models'),('recommend','Recommendations'),('blueprints','Blueprint design and prediction'),('graph','Knowledge graph')]:
         page.locator(f'nav a[href="#{route}"]').click()
         expect(page.locator('#main h1')).to_have_text(title)
         expect(page.locator('#main .error:visible, #main .bp-error:visible')).to_have_count(0)
         record('browser_page_'+route)
     page.locator('nav a[href="#compounds"]').click()
-    page.get_by_role('button',name='证据检索',exact=True).click()
+    page.get_by_role('button',name='Evidence search',exact=True).click()
     page.locator('#evidence-form select[name="compound"]').select_option('Voriconazole')
-    page.get_by_role('button',name='检索证据',exact=True).click()
+    page.get_by_role('button',name='Search evidence',exact=True).click()
     expect(page.locator('tbody tr').first).to_contain_text(re.compile('voriconazole',re.I))
     row=page.locator('tbody tr').first
     expect(row.locator('a[data-action="evidence-source"]')).to_have_count(1)
@@ -491,31 +491,31 @@ with sync_playwright() as w:
     source_location=check_source_link(page, row.locator('a[data-action="evidence-source"]'))
     record('browser_new_evidence_search_and_source_link',source=source_location)
     with page.expect_download() as info:
-        page.get_by_role('button',name='导出全部匹配证据').click()
+        page.get_by_role('button',name='Export matching evidence').click()
     path=RUN/'downloads/evidence.csv';info.value.save_as(str(path))
     assert path.stat().st_size>100 and 'voriconazole' in path.read_text().lower()
     record('browser_filtered_evidence_csv_download')
     page.locator('#evidence-form select[name="compound"]').select_option('caffeine')
     page.locator('#evidence-form select[name="type"]').select_option('special_population')
     page.locator('#evidence-form input[name="q"]').fill('liver disease')
-    page.get_by_role('button',name='检索证据',exact=True).click()
+    page.get_by_role('button',name='Search evidence',exact=True).click()
     link=page.locator('a[data-action="evidence-source"][data-id="dc11b8e2-38ef-5f5e-be49-b8a277049293"]')
     expect(link).to_have_count(1)
     check_source_link(page, link, 'https://pubmed.ncbi.nlm.nih.gov/10197295/')
-    for technical_label in ('证据 ID','原始位置','文件校验值'):
+    for technical_label in ('Evidence ID','Original location','File checksum'):
         expect(page.locator('#main')).not_to_contain_text(technical_label)
     page.locator('#toast').evaluate('(e)=>e.hidden=true')
     page.screenshot(path=str(RUN/'evidence-provenance.png'),full_page=True)
     record('browser_single_article_link_without_technical_details')
     page.locator('nav a[href="#models"]').click()
-    page.get_by_role('button',name='下一页 →').click()
-    expect(page.locator('.pagination')).to_contain_text('第 2 页')
-    page.get_by_role('button',name='详情 ↗').first.click()
+    page.get_by_role('button',name='Next page →').click()
+    expect(page.locator('.pagination')).to_contain_text('Page 2')
+    page.get_by_role('button',name='Details ↗').first.click()
     expect(page.locator('#detail')).to_be_visible()
-    expect(page.locator('#detail-body')).to_contain_text('版本')
-    page.get_by_role('button',name='关闭详情').click()
+    expect(page.locator('#detail-body')).to_contain_text('version')
+    page.get_by_role('button',name='Close details').click()
     with page.expect_download() as info:
-        page.get_by_role('button',name='导出模型目录').click()
+        page.get_by_role('button',name='Export model catalog').click()
     path=RUN/'downloads/models.json';info.value.save_as(str(path))
     assert len(json.loads(path.read_text())['items'])==summary['versions']
     page.locator('#toast').evaluate('(e)=>e.hidden=true')
@@ -530,9 +530,9 @@ with sync_playwright() as w:
         expect(page.locator('#research-result')).to_contain_text('PBPK-Match')
         record('browser_saved_learning_recommendation_without_rerunning_gpu',candidates=current['result']['candidate_count'])
     page.locator('#research-recommend-form select[name="compound"]').select_option('midazolam')
-    page.get_by_role('button',name='仅检查用途与适用条件',exact=True).click()
-    expect(page.get_by_role('heading',name='模型匹配结果',exact=True)).to_be_visible()
-    expect(page.locator('#main')).to_contain_text(f'扫描 {summary["versions"]:,} 个版本')
+    page.get_by_role('button',name='Check applicability only',exact=True).click()
+    expect(page.get_by_role('heading',name='Model matching results',exact=True)).to_be_visible()
+    expect(page.locator('#main')).to_contain_text(f'Scanned {summary["versions"]:,} versions')
     assert page.locator('tbody tr').count()>0
     assert '[object Object]' not in page.locator('#main').inner_text()
     page.locator('#toast').evaluate('(e)=>e.hidden=true')

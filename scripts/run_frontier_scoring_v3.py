@@ -373,7 +373,7 @@ def command(python, *args):
 
 def publish_summary():
     folder = ROOT / "experiments/model_recommendation/results_summary"
-    link = folder / "06_证据优先评分"
+    link = folder / "06_evidence_first_assessment"
     if not link.exists(): link.symlink_to(os.path.relpath(ASSESS, folder), target_is_directory=True)
     path = folder / "README.md"
     text = path.read_text()
@@ -381,18 +381,18 @@ def publish_summary():
     state = base.read(RUN / "pipeline_status.json", {})
     worker = base.read(RUN / "status.json", {})
     judge = worker.get("judge")
-    progress = (f"{'主评分' if judge == 'primary' else '5% 复判'}已提交：{worker.get('committed_pairs', 0):,}/"
-                f"{worker.get('expected_pairs', 216160):,}。" if judge in {"primary", "secondary"}
-                else "全量评分尚未启动。")
-    block = (f"{first}\n## 证据优先评分 v3\n\n"
-        f"更新：{base.now()}；阶段：`{state.get('stage', 'prepare')}`；状态：`{state.get('state', 'preparing')}`。"
+    progress = (f"{'Primary assessment' if judge == 'primary' else '5% repeat judgment'} — committed: {worker.get('committed_pairs', 0):,}/"
+                f"{worker.get('expected_pairs', 216160):,}. " if judge in {"primary", "secondary"}
+                else "Full assessment has not started.")
+    block = (f"{first}\n## Evidence-first assessment v3\n\n"
+        f"Updated: {base.now()}; Stage: `{state.get('stage', 'prepare')}`; Status: `{state.get('state', 'preparing')}`. "
         f"{progress}\n\n"
-        "旧评分触发质量停止的记录保留。v3 先输出模型自行选择的证据，再输出等级；无引用时保持未知。"
-        "Phi-4 主评分、Qwen3.6-27B 固定 5% 敏感性复判；先通过开发回归、新控制和代表原文的一次修复后验收。"
-        "语法通过不等于证据语义正确，不宣称专家金标准。\n\n"
-        "[v3 状态与结果](06_证据优先评分/)；命令："
-        "`runtime/app-env/bin/python scripts/run_frontier_scoring_v3.py status` / `stop` / `start`。"
-        f"SSH 断开后继续；质量停止后禁止原样重启。\n{last}")
+        "Records that triggered the old quality stop remain. v3 outputs model-selected evidence before the grade; absent citations remain unknown. "
+        "Phi-4 is primary and Qwen3.6-27B the fixed 5% sensitivity reviewer, after passing development regression, new controls, and representative sources following one repair. "
+        "Valid syntax does not establish semantic evidence support; no expert gold standard is claimed.\n\n"
+        "[v3 Status and results](06_evidence_first_assessment/); Command: "
+        "`runtime/app-env/bin/python scripts/run_frontier_scoring_v3.py status` / `stop` / `start`. "
+        f"Continues after SSH disconnects; unchanged restart after a quality stop is prohibited.\n{last}")
     if first in text:
         if last not in text: raise ValueError("Incomplete README markers")
         text = text[:text.index(first)] + block + text[text.index(last)+len(last):]

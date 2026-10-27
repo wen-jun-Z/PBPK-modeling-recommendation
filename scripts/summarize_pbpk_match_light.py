@@ -387,19 +387,19 @@ def paper_tables(reports):
              r'\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X'
              r'*{4}{>{\centering\arraybackslash}X}@{}}\toprule')
     end = r'\bottomrule\end{tabularx}\end{center}'
-    doc = [r'\paragraph{自建方法的分组内部验证。}复用冻结文本编码器，仅训练轻量匹配网络和误差分支；'
-           r'采用五折分组留出、内层三折选择，随机种子为17。对照复用已完成的排序分数，'
-           r'适用性概率在相同外层训练折校准。下表的NDCG、Recall和MRR仅在具有已知相关候选的请求中计算，'
-           r'未知标签不补为负例。未另外训练同监督量的对照，因此差异不能单独归因于网络结构。',
-           start, r'方法 & NDCG@10 & Recall@10 & MRR & 适用F1 \\ \midrule']
-    execution = [r'\paragraph{自建方法的预测误差。}下表为普通Cmax，单元格为覆盖率/GMFE；'
-                 r'第1、2、3位分别评价，同分按等概率处理，不以靠后候选递补。'
-                 r'覆盖不同的条件GMFE不能直接判定整体优劣；共同可计分场景的配对分析见结果文件。',
-                 start, r'方法 & 第1位 & 第2位 & 第3位 & Top-5遗漏 \\ \midrule']
-    stability = [r'\paragraph{自建方法的排序稳定性。}句序调整与去除证据分别检验表述稳定性和证据敏感性。'
-                 r'前三列为首位集合Jaccard、首位集合Jaccard和原请求首位并列率；'
-                 r'重复、批量大小和候选顺序检查另在各外层模型的留出请求上执行。',
-                 start, r'方法 & 句序调整 & 去除证据 & 首位并列率 & 请求数 \\ \midrule']
+    doc = ['\\paragraph{Grouped internal validation of the in-house method.} The frozen text encoder is reused; only the lightweight matcher and error branch are trained. '
+           'Five grouped outer folds and three inner selection folds use seed 17. Controls reuse completed ranking scores, '
+           'and applicability probabilities are calibrated on the same outer-training folds. NDCG, Recall, and MRR below use only requests with known relevant candidates. '
+           'Unknown labels are not filled as negatives. Controls with equal supervision were not additionally trained, so differences cannot be attributed solely to network structure.',
+           start, 'Method & NDCG@10 & Recall@10 & MRR & Applicability F1 \\\\ \\midrule']
+    execution = ['\\paragraph{Prediction error of the in-house method.} The table reports ordinary Cmax, with coverage/GMFE in each cell. '
+                 'Positions 1, 2, and 3 are evaluated separately, with equal-probability ties and no replacement by lower candidates. '
+                 'Conditional GMFE at different coverage cannot establish overall superiority; paired shared-scenario analysis is in the result files.',
+                 start, 'Method & Position 1 & Position 2 & Position 3 & Top-5 omission \\\\ \\midrule']
+    stability = ['\\paragraph{Ranking stability of the in-house method.} Sentence reordering and evidence removal test wording stability and evidence sensitivity respectively. '
+                 'The first three columns are top-set Jaccard, top-set Jaccard, and the original-request top-tie rate. '
+                 'Repeat, batch-size, and candidate-order checks are additionally run on held-out requests for each outer model.',
+                 start, 'Method & Reordered sentences & Removed evidence & Top-tie rate & Requests \\\\ \\midrule']
     endpoint = 'Cmax_reference_vs_group'
     for method, report in reports.items():
         name = esc(DISPLAY.get(method, method))
@@ -417,11 +417,11 @@ def paper_tables(reports):
             number(st['missing_evidence']['top1_set_jaccard']), number(st['top1_tie_fraction']),
             str(st['reordered']['total_queries'])]) + r' \\')
     own = reports[OWN]['quality']
-    doc += [end, f"排序质量可计分请求为{own['judged_only']['eligible_queries']}/{own['coverage']['queries']}；"
-        f"自建方法首位资料不足比例为{number(own['coverage']['full_catalog_top1_unknown_rate'])}，"
-        f"Brier为{number(own['applicability']['brier'])}，ECE为{number(own['applicability']['ece'])}。"]
-    execution += [end, r'Top-5遗漏仅在至少两个候选有实测终点的场景中计算，先汇总同一药物和研究的场景，'
-                  r'再依次对研究与药物取等权平均；未测候选保留为未知，不能据此推断其不可用。']
+    doc += [end, f"Scorable ranking requests: {own['judged_only']['eligible_queries']}/{own['coverage']['queries']}; "
+        f"in-house top-1 insufficient-information fraction: {number(own['coverage']['full_catalog_top1_unknown_rate'])}, "
+        f"Brier={number(own['applicability']['brier'])}, ECE={number(own['applicability']['ece'])}."]
+    execution += [end, 'Top-5 omission is calculated only where at least two candidates have measured endpoints. Scenarios are first aggregated within drug and study, '
+                  'then averaged equally by study and drug. Unmeasured candidates remain unknown rather than being inferred unusable.']
     stability.append(end)
     return {name: '\n'.join(lines) + '\n' for name, lines in
             (('paper_document.tex', doc), ('paper_execution.tex', execution), ('paper_stability.tex', stability))}

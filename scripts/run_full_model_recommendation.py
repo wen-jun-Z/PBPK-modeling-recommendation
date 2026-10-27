@@ -46,7 +46,7 @@ def require_active_evaluation(output):
     if policy.is_file() and read(policy).get("allow_training") is False:
         raise RuntimeError(
             "This evaluation is retired: matching-rule labels cannot measure scientific "
-            "PBPK model recommendation quality. See docs/研究计划.md."
+            'PBPK model recommendation quality. See docs/research_plan.md.'
         )
 
 

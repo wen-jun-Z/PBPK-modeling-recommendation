@@ -207,28 +207,28 @@ def article_links(document, normalized=None):
             links.append({'label': label, 'url': href, 'kind': kind})
 
     if ids['pmid']:
-        add('PubMed 文章', f"https://pubmed.ncbi.nlm.nih.gov/{ids['pmid']}/", 'article')
+        add('PubMed article', f"https://pubmed.ncbi.nlm.nih.gov/{ids['pmid']}/", 'article')
     if ids['pmcid']:
-        add('PMC 全文', f"https://pmc.ncbi.nlm.nih.gov/articles/{ids['pmcid']}/", 'full_text')
+        add('PMC full text', f"https://pmc.ncbi.nlm.nih.gov/articles/{ids['pmcid']}/", 'full_text')
     if ids['doi']:
-        add('期刊原文 / DOI', 'https://doi.org/' + quote(ids['doi'], safe='/():;'), 'publisher')
+        add('Publisher article / DOI', 'https://doi.org/' + quote(ids['doi'], safe='/():;'), 'publisher')
     if url and source == 'dailymed':
         match = re.search(r'/spls/([0-9a-f-]{36})(?:\.|/|$)', url, re.I)
         setid = match[1] if match else parse_qs(urlsplit(url).query).get('setid', [''])[0]
         if re.fullmatch(r'[0-9a-f-]{36}', setid, re.I):
-            add('DailyMed 说明书', 'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid='+setid, 'article')
+            add('DailyMed label', 'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid='+setid, 'article')
     cid = str((normalized or {}).get('pubchem_cid') or '')
     if source == 'pubchem' and cid.isdigit():
-        add('PubChem 化合物', f'https://pubchem.ncbi.nlm.nih.gov/compound/{cid}', 'article')
+        add('PubChem compound', f'https://pubchem.ncbi.nlm.nih.gov/compound/{cid}', 'article')
     # Keep only an actual page/PDF as fallback, not JSON/XML APIs or OA tarballs.
     if url and not links:
         parsed = urlsplit(url)
         if parsed.path.lower().endswith('.pdf'):
-            add('来源 PDF', url, 'pdf_remote')
+            add('Source PDF', url, 'pdf_remote')
         elif not (parsed.hostname == 'eutils.ncbi.nlm.nih.gov' or
                   re.search(r'\.(?:xml|json|tgz|tar\.gz|tar_gz)$', parsed.path, re.I) or
                   '/rest/' in parsed.path or '/services/' in parsed.path):
-            add('来源网页', url, 'article')
+            add('Source page', url, 'article')
     return links
 
 
@@ -317,15 +317,15 @@ def document_provenance(db, document_id=None, *, evidence=None):
     for record in pdf_records:
         path = resolve_pdf(record)
         if path:
-            links.append({'label': '打开 PDF', 'url': '/api/workspace/source-pdf/'+record['raw_document_id'],
+            links.append({'label': 'Open PDF', 'url': '/api/workspace/source-pdf/'+record['raw_document_id'],
                           'kind': 'pdf_local', 'verification': 'sha256_matches_registered_source'})
             break
         url = http_url(record.get('source_url'))
         if url and urlsplit(url).path.lower().endswith('.pdf') and not any(x['kind'].startswith('pdf') for x in links):
-            links.append({'label': '来源 PDF', 'url': url, 'kind': 'pdf_remote'})
+            links.append({'label': 'Source PDF', 'url': url, 'kind': 'pdf_remote'})
     has_pdf = any(x['kind'].startswith('pdf') for x in links)
-    return {'title': document.get('title') or '来源资料', 'source': document.get('source_id'),
+    return {'title': document.get('title') or 'Source material', 'source': document.get('source_id'),
             **ids, 'publication_date': str(document['publication_date']) if document.get('publication_date') else None,
             'location': summary.get('source_location') or document.get('source_location'),
-            'links': links, 'pdf_note': None if has_pdf else '未收录可核验的 PDF；可从全文或期刊页面查看可用版本。',
+            'links': links, 'pdf_note': None if has_pdf else 'No verified PDF is available; check the full-text or publisher page for available versions.',
             'link_basis': 'stored_article_metadata_and_checksum_verified_local_assets'}

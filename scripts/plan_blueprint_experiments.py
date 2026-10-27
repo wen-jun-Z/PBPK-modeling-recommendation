@@ -1,9 +1,4 @@
-"""Recompute the blueprint experiment design and conditional sample-size analysis.
-
-This is a planning artifact, not a benchmark launcher or a source of observed
-performance. It reads no held-out concentrations and runs no PBPK solver/LLM.
-The authoritative rationale and eligibility rules are in docs/研究计划.md §9.
-"""
+'Recompute the blueprint experiment design and conditional sample-size analysis.\n\nThis is a planning artifact, not a benchmark launcher or a source of observed\nperformance. It reads no held-out concentrations and runs no PBPK solver/LLM.\nThe authoritative rationale and eligibility rules are in docs/research_plan.md section 9.\n'
 from __future__ import annotations
 
 import argparse
@@ -38,18 +33,18 @@ def checksum(path: Path) -> str:
 def build_plan() -> dict:
     hold_path = ROOT / 'runtime/deployment/blueprint_experiment_hold.json'
     if hold_path.is_file() and json.loads(hold_path.read_text()).get('development_status') == 'algorithm_redesign':
-        raise ValueError('旧蓝图实验方案已退役；当前方法与验证安排见 docs/推荐策略.md 和 docs/研究计划.md 第 9 节。')
+        raise ValueError('The old blueprint experiment plan is retired; see docs/recommendation_strategy.md and section 9 of docs/research_plan.md for current methods and validation.')
     development_drugs, evaluation_drugs, requests_per_drug = 12, 60, 2
     requests = evaluation_drugs * requests_per_drug
     mechanism_requests, synthetic_tasks, seeds = 32, 120, [17, 43, 101]
     methods = [
-        ("M0", "固定人体底座及药物参数，统一拟合", 1),
-        ("M1", "需求规则装配，统一拟合", 1),
-        ("M2", "同一 Qwen 单次提案，统一拟合", 3),
-        ("M3", "合法空间随机搜索", 3),
-        ("M4", "随机森林代理辅助搜索", 3),
-        ("M5", "先结构后参数，两阶段选择", 3),
-        ("M6", "需求与证据引导的结构和参数子集联合搜索", 3),
+        ("M0", 'Fixed human base and drug parameters; common fitting', 1),
+        ("M1", 'Requirement-rule assembly; common fitting', 1),
+        ("M2", 'Single proposal from the same Qwen; common fitting', 3),
+        ("M3", 'Random search in the admissible space', 3),
+        ("M4", 'Random-forest surrogate-assisted search', 3),
+        ("M5", 'Structure then parameters; two-stage selection', 3),
+        ("M6", 'Requirement- and evidence-guided joint search over structure and parameter subsets', 3),
     ]
     counts = {
         "main_comparisons": requests * sum(item[2] for item in methods),
@@ -80,8 +75,8 @@ def build_plan() -> dict:
         "src/pbpk_kb/blueprints/human_model_snapshot.py",
         "src/pbpk_kb/blueprints/design_contracts.py",
         "scripts/run_blueprint_development.py",
-        "docs/研究计划.md",
-        "docs/推荐策略.md",
+        'docs/research_plan.md',
+        'docs/recommendation_strategy.md',
     ]
     return {
         "artifact_kind": "experiment_design_and_conditional_power",

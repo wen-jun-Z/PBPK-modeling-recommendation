@@ -317,7 +317,7 @@ def _source_options(snapshot, contract, *, source_sha256=None):
             # Selection uses design and source metadata only, never performance.
             food = _name(contract.get("food"))
             # Word boundaries are essential: breakfast is not a fasted state.
-            fast = bool(re.search(r'\b(?:fasted|fasting|fast)\b', food) or '空腹' in food
+            fast = bool(re.search(r'\b(?:fasted|fasting|fast)\b', food) or '\u7a7a\u8179' in food
                         or (isinstance(contract.get('food'), dict) and any('fasting_h' in k for k in contract['food'])))
             fed = bool(re.search(r'\bfed\b|\bhigh[- ]fat\b|\bwith (?:a )?(?:meal|food|breakfast)\b', food))
             source_fast = bool(re.search(r'\b(?:fasted|fasting|fast)\b', _name(name)))

@@ -215,7 +215,7 @@ def test_secondary_readme_uses_secondary_denominator(tmp_path, monkeypatch):
     put(v3.RUN / "status.json", {"judge": "secondary", "committed_pairs": 123, "expected_pairs": 1000})
     v3.publish_summary()
     text = (folder / "README.md").read_text()
-    assert "5% 复判已提交：123/1,000" in text
+    assert "5% repeat judgment — committed: 123/1,000" in text
     assert "123/216,160" not in text
 
 

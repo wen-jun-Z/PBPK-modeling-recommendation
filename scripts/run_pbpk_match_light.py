@@ -272,13 +272,13 @@ def display():
     done = len(list((OUT / 'runs/seed17').glob('*/*/complete.json')))
     fill = round(32 * min(done / 20, 1))
     p = s.get('training_progress', {})
-    return '\n'.join(['PBPK-Match · 冻结权重 / 小网络训练',
+    return '\n'.join(['PBPK-Match · Frozen weights / small-network training',
         f'┃{"█" * fill}{"░" * (32-fill)}┃ {done:2d}/20  {done/20:6.1%}',
-        f'阶段 {s.get("phase","未启动")} | fold {s.get("fold","—")} {s.get("fit","")}',
-        f'epoch {p.get("epoch","—")} | 当前拟合已用 {p.get("elapsed_seconds",0)/60:.1f} min',
-        f'进程 {active() or "未运行"}', f'更新时间(UTC) {s.get("updated_at","—")}',
-        f'错误 {s["error"]}' if s.get('error') else '外部推荐器：全部复用已有结果，无重新推理',
-        'Ctrl+C只退出进度显示。'])
+        f'Stage {s.get("phase","Not started")} | fold {s.get("fold","—")} {s.get("fit","")}',
+        f'epoch {p.get("epoch","—")} | Current fit elapsed {p.get("elapsed_seconds",0)/60:.1f} min',
+        f'Process {active() or "Not running"}', f'Updated (UTC) {s.get("updated_at","—")}',
+        f'Error {s["error"]}' if s.get('error') else 'External recommenders: all saved results reused without new inference',
+        'Ctrl+C exits the display only.'])
 
 
 def main():
@@ -305,7 +305,7 @@ def main():
         with (RUNTIME / 'launcher.log').open('ab') as stream:
             child = subprocess.Popen(cmd, cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
                 stdout=stream, stderr=stream, start_new_session=True)
-        print(f'已启动自建小网络任务，PID {child.pid}。')
+        print(f'Started the in-house small-network task, PID {child.pid}. ')
     elif args.action == 'stop':
         worker = active()
         if worker:

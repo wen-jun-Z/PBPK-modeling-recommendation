@@ -134,22 +134,22 @@ def main():
     summary['all_eleven_predictions_available'] = all(c['predicted'] == c['requested'] for c in summary['endpoint_coverage'].values())
     save(output / 'summary.json', summary)
     readme_path = output / 'README.md'
-    text = readme_path.read_text().replace('模型时域至多168h。', '主批时域上限168h；22个缺失终末指标的场景另按336/672/1344h追加时域。原时间网格、原窗口预测、模型参数和质量门槛保持不变。')
+    text = readme_path.read_text().replace('The model horizon is at most 168 h.', 'The primary batch horizon is 168 h; 22 scenarios missing terminal endpoints additionally extend to 336/672/1344 h. Original time grids, window predictions, parameters, and quality thresholds remain unchanged.')
     text = text.replace('./scripts/progress.sh\n```',
         'runtime/app-env/bin/python -B scripts/supplement_ten_drug_horizons.py --workers 6\n'
-        '# 仅当补充阶段出现操作失败时串行恢复：\n'
+        '# Resume serially only if the supplemental stage has operational failures:\n'
         'runtime/app-env/bin/python -B scripts/summarize_ten_drug_evaluation.py --retry-horizon-failures\n'
         'runtime/app-env/bin/python -B scripts/summarize_ten_drug_evaluation.py\n./scripts/progress.sh\n```')
-    names = {'caffeine': '咖啡因', 'midazolam': '咪达唑仑', 'fluconazole': '氟康唑', 'alfentanil': '阿芬太尼',
-             'alprazolam': '阿普唑仑', 'sufentanil': '舒芬太尼', 'moxifloxacin': '莫西沙星',
-             'amikacin': '阿米卡星', 'vancomycin': '万古霉素', 'furosemide': '呋塞米'}
+    names = {'caffeine': 'Caffeine', 'midazolam': 'Midazolam', 'fluconazole': 'Fluconazole', 'alfentanil': 'Alfentanil',
+             'alprazolam': 'Alprazolam', 'sufentanil': 'Sufentanil', 'moxifloxacin': 'Moxifloxacin',
+             'amikacin': 'Amikacin', 'vancomycin': 'Vancomycin', 'furosemide': 'Furosemide'}
     requests = {c['case_id']: c['request'] for c in protocol['cases']}
     def value(row, endpoint, field):
         number = row['endpoint_values'].get(endpoint, {}).get(field)
         return '' if number is None else f'{number:.4g}'
-    lines = ['', '## 预测值示例：每药一个参考场景', '',
-        '下表是模型预测，不是实测结果。统一30岁男性、70kg、175cm，使用各药参考剂量和输注时长；曲线、AUC、峰值和末次浓度对应0–24h。全部109场景见CSV。', '',
-        '| 药物 | 剂量 mg | 输注 min | AUC₀–₂₄ mg·h/L | Cmax mg/L | Tmax h | C₂₄ mg/L |',
+    lines = ['', '## Prediction examples: one reference scenario per drug', '',
+        'These are model predictions, not measurements. All use a 30-year-old male, 70 kg and 175 cm, with drug-specific reference dose and infusion duration. Curves, AUC, peaks, and last concentration cover 0–24 h. CSV includes all 109 scenarios.', '',
+        '| Drug | Dose mg | Infusion min | AUC 0–24 mg·h/L | Cmax mg/L | Tmax h | C24 mg/L |',
         '|---|---:|---:|---:|---:|---:|---:|']
     for drug in DRUGS:
         row = rows[f'{drug}_grid_d1p0_reference_male']
@@ -157,26 +157,26 @@ def main():
         vals = [value(row, *pair) for pair in [('auc', 'value_mg_h_per_l'), ('cmax', 'value_mg_per_l'),
                 ('tmax', 'value_h'), ('c_last', 'value_mg_per_l')]]
         lines.append('| ' + ' | '.join([names[drug], f"{dosing['dose_mg']:g}", f"{dosing.get('infusion_minutes', 0):g}", *vals]) + ' |')
-    lines += ['', '| 药物 | 半衰期 h | AUC∞ mg·h/L | CL L/h | Vz L | MRT h | Vss L |',
+    lines += ['', '| Drug | Half-life h | AUC infinity mg·h/L | CL L/h | Vz L | MRT h | Vss L |',
               '|---|---:|---:|---:|---:|---:|---:|']
     for drug in DRUGS:
         row = rows[f'{drug}_grid_d1p0_reference_male']
         vals = [value(row, *pair) for pair in [('terminal_half_life', 'value_h'), ('auc_inf', 'value_mg_h_per_l'),
                 ('clearance', 'value_l_per_h'), ('vz', 'value_l'), ('mrt', 'value_h'), ('vss', 'value_l')]]
         lines.append('| ' + ' | '.join([names[drug], *vals]) + ' |')
-    lines += ['', '当前清除和结合过程采用线性假设。同一人体与输注条件下，剂量变化时AUC/Cmax近似按比例变化，CL、半衰期、Vz、MRT、Vss可能基本不变；这不能证明真实药物在这些剂量下没有饱和现象。', '',
-              '## 本轮效果与限制', '',
-              '另研究曲线比较仅覆盖8药、12场景、10个研究组；阿米卡星和莫西沙星目前只有开发重建数据，不能把其结果充作跨研究泛化证据。', '',
-              '全部误差分终点报告。AUC接近观测并不保证曲线形状、峰值或末段准确；人口资料缺失、手术背景与通用生理不匹配、多电离位点近似等限制见各药输入记录。呋塞米Haegeli曲线未评分，论文报告终点对照仍保留。', '',
-              '[原主批结果](../evaluation/summary.json) · [追加时域结果](../horizon_supplement/summary.json) · [独立数值复核](../review.json)']
+    lines += ['', 'Clearance and binding currently assume linearity. With the same human and infusion conditions, AUC/Cmax change approximately in proportion to dose while CL, half-life, Vz, MRT, and Vss may remain nearly constant. This does not establish absence of saturation in real drugs at these doses.', '',
+              '## Results and limitations', '',
+              'Other-study curve comparisons cover only eight drugs, 12 scenarios, and ten study groups. Amikacin and Moxifloxacin currently have only development reconstruction data, not evidence of cross-study generalization.', '',
+              'Errors are reported separately by endpoint. Matching AUC does not guarantee accurate curve shape, peak, or tail. Drug inputs document missing demographics, surgical contexts mismatched to generic physiology, and multiple-ionization-site approximations. The Furosemide Haegeli curve was not scored; reported-endpoint comparisons remain.', '',
+              '[Original primary results](../evaluation/summary.json) · [Extended horizons](../horizon_supplement/summary.json) · [Independent numerical review](../review.json)']
     if retry:
-        lines += ['', '补充阶段1例在原生求解前因进度临时文件原子替换与目录计数竞争而失败，已在无并发进度写入的目录串行恢复；原失败和[恢复记录](../horizon_retry/summary.json)均保留。']
+        lines += ['', 'One supplemental case failed before native solving because atomic progress-file replacement raced with directory counting. It was recovered serially without concurrent progress writes; the original failure and [recovery record](../horizon_retry/summary.json) remain.']
     readme_path.write_text(text + '\n'.join(lines) + '\n')
-    (BATCH / 'README.md').write_text('# 十药终点评测\n\n'
-        '最终汇总见 [报告与预测值](final_results/README.md)。\n\n'
-        '- [全部109场景预测](final_results/predictions.csv)\n'
-        '- [11类终点评测及空值原因](final_results/endpoint_evaluation.csv)\n'
-        '- [临床曲线误差](final_results/clinical_comparison.csv)\n')
+    (BATCH / 'README.md').write_text('# Ten-drug endpoint evaluation\n\n'
+        'Final summary: [report and predictions](final_results/README.md).\n\n'
+        '- [Predictions for all 109 scenarios](final_results/predictions.csv)\n'
+        '- [Eleven endpoint types and missing-value reasons](final_results/endpoint_evaluation.csv)\n'
+        '- [Clinical curve errors](final_results/clinical_comparison.csv)\n')
     print(json.dumps({k: v for k, v in summary.items() if k not in {'results', 'stratified_metrics'}}, ensure_ascii=False, indent=2))
     return 0
 

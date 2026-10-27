@@ -128,24 +128,24 @@ def analyze(run):
 
 
 def markdown(result,summary):
-    out=[BEGIN,'### 当前：证据构建与用途小试（2026-09-29，已完成分析）','',
-        '78/78组实际计算成功：38组PBPK和40组两室。76个PBPK公式拟合完成；720个逻辑单元中440个有临床评分，160个因证据规则阻塞，120个DDI请求只评价能力边界。它们来自10药、9个研究簇，不能算作720项独立临床实验。',
-        '', '计算约62分钟，1,808次校准调用加38次目标预测。试算中46次失败（42次清除能力/公式检查、4次浓度非正），均保留；最终预测全部成功。22/76公式拟合达到数值收敛，54/76用满预算。报告首次因监控并发写入state触发完整性检查，已在进程退出后独占锁恢复评分，未改预测和源数据。','',
-        '**曲线GMFE（按药等权，越低越好）：**','',
-        '| 方法/条件 | 完整开发曲线 | 固定五点 |','|---|---:|---:|']
-    for method,label in [('evidence_policy','本方法：可用证据'),('fixed_template','固定输入PBPK：可用证据'),('rf_fill','RF fu优先PBPK'),('two_compartment','两室PK'),('two_compartment_prior','两室PK＋CL先验')]:
+    out=[BEGIN,'### Current: evidence construction and purpose pilot (2026-09-29; analysis complete)','',
+        'All 78/78 groups completed real calculations: 38 PBPK and 40 two-compartment groups. There were 76 PBPK formula fits. Of 720 logical units, 440 had clinical scores, 160 were blocked by evidence rules, and 120 DDI requests assessed capability boundaries only. They came from ten drugs and nine study clusters, not 720 independent clinical experiments.',
+        '', 'Computation took about 62 minutes, with 1,808 calibration calls and 38 target predictions. All 46 trial failures were retained: 42 clearance-capacity/formula checks and four nonpositive concentrations. Every final prediction succeeded. Numerical convergence was reached in 22/76 formula fits; 54/76 exhausted the budget. Reporting initially hit an integrity check because monitoring wrote state concurrently. Scoring resumed under an exclusive lock after the process exited; predictions and source data were unchanged.','',
+        '**Curve GMFE, equally weighted by drug; lower is better:**','',
+        '| Method/condition | Full development curve | Fixed five points |','|---|---:|---:|']
+    for method,label in [('evidence_policy','Proposed method: available evidence'),('fixed_template','Fixed-input PBPK: available evidence'),('rf_fill','RF-fu-first PBPK'),('two_compartment','Two-compartment PK'),('two_compartment_prior','Two-compartment PK + CL prior')]:
         vals=[result['statistics']['groups']['available'][s][method]['curve']['estimate'] for s in ('full','five')]
         out.append(f'| {label} | {vals[0]:.3f} | {vals[1]:.3f} |')
     out.extend(['',
-        '本方法相对两室的GMFE比为1.114 [0.950, 1.381]和1.050 [0.922, 1.232]；区间为2,000次研究聚类bootstrap。点估计仍落后，区间跨1不证明等效。五点下6/10药物误差更低，但药物等权总体仍未超过两室。正常输入时本方法和固定输入对照复用相同计算，数值相同是预期结果。','',
-        '**证据收益与代价：** 四药实际改变fu，证据优先均改善曲线，四药配对GMFE比为0.731 [0.551, 0.971]（完整）和0.731 [0.481, 0.987]（五点）。其余六药输入相同，不算新增消融证据。缺fu或剔除错误物种fu后，本方法用RF补缺，GMFE为1.708/1.695，与RF fu对照完全相同；固定输入流程阻塞10/10，两室仍可运行。收益是可继续构建，不是缺信息后精度优于两室。','',
-        '**工程处置：** 本方法60个请求放行30个、阻塞30个，按预设规则无误放行/误阻塞。固定输入流程额外阻塞20个可补缺请求；RF fu优先和去掉冲突保护均放行10个矛盾fu请求。两室不需要fu和分子式，50个血浆请求均可执行、10个DDI请求阻塞。这是人工扰动与预设规则的一致性检验，不能写成临床决策准确率100%。','',
-        '**终点分析：** 五点下本方法的AUC和Cmax平均倍数误差为1.087、1.367，两室为1.159、1.444；对应两倍内比例为6/6、9/10与6/6、8/10。但半衰期为1.859对1.447，Vz为1.845对1.470，仍落后。终点逐项比较属于探索性分析，没有多重检验校正；CL与AUC∞相关，不能当作两份独立优势。弱尾部预测继续标记，详见结果表。','',
-        '**主要问题：** Remdesivir曲线GMFE为2.992/2.255，是唯一仍超过2的药物。五点下AUC误差仅1.031倍，但半衰期5.482倍、Vz 5.218倍，后两项有弱尾标记，说明暴露积分改善没有解决末端曲线偏差。剔除预先指定的Nemonoxacin、Dexmedetomidine、Midazolam后，七药GMFE为1.604/1.598，两室为1.326/1.427，结论没有逆转。','',
-        '**后续方向：** 先诊断Remdesivir的分布/尾段与开发拟合误差，区分参数化限制和搜索未充分；不根据目标观测调参后重新宣称独立验证。保留证据补缺及冲突保护，补真实缺失/冲突案例；局部灵敏度是否有独立贡献需要另作相同预算消融。当前不自动启动新一轮训练，也不覆盖论文PDF。','',
-        '[最终逐项结果CSV](blueprint_design/evidence_policy_20260929/results.csv) · [完整评分JSON](blueprint_design/evidence_policy_20260929/results.json) · [后续诊断](blueprint_design/evidence_policy_20260929/state.json) · [复核入口](../scripts/analyze_blueprint_evidence_policy.py)','',
+        'GMFE ratios against two-compartment PK were 1.114 [0.950, 1.381] and 1.050 [0.922, 1.232], using 2,000 study-cluster bootstrap replicates. Point estimates remained worse; intervals crossing 1 do not establish equivalence. With five points, 6/10 drugs had lower error, but drug-equally-weighted performance did not beat two-compartment PK. Under normal inputs, the proposed and fixed-input controls reuse the same calculations, so identical values are expected.','',
+        '**Evidence benefits and costs:** fu actually changed for four drugs; evidence priority improved all four curves. Paired GMFE ratios were 0.731 [0.551, 0.971] with full curves and 0.731 [0.481, 0.987] with five points. The other six drugs used identical inputs and are not new ablation evidence. With fu absent or wrong-species fu excluded, RF gap filling gave GMFE 1.708/1.695, identical to the RF-fu control. Fixed inputs blocked 10/10 drugs while two-compartment PK remained executable. The benefit is continued construction, not superior accuracy over two-compartment PK after information loss.','',
+        '**Engineering decisions:** of 60 requests, the method admitted 30 and blocked 30, with no false decisions under predefined rules. Fixed inputs additionally blocked 20 fillable requests; RF-fu priority and removal of conflict protection each admitted ten contradictory-fu requests. Two-compartment PK needs neither fu nor molecular formula, so all 50 plasma requests ran and ten DDI requests were blocked. This checks consistency with artificial perturbations and predefined rules, not 100% clinical decision accuracy.','',
+        '**Endpoints:** with five points, AUC/Cmax mean fold errors were 1.087/1.367 versus 1.159/1.444 for two-compartment PK. Corresponding within-twofold counts were 6/6 and 9/10 versus 6/6 and 8/10. Half-life remained worse at 1.859 versus 1.447, as did Vz at 1.845 versus 1.470. Endpoint-wise comparisons are exploratory without multiple-testing adjustment; CL and AUC infinity are correlated, not independent advantages. Weak-tail predictions remain flagged in the result table.','',
+        '**Main issue:** Remdesivir curve GMFE was 2.992/2.255, the only drug still above 2. With five points, AUC error was only 1.031-fold, but half-life and Vz errors were 5.482-fold and 5.218-fold, both with weak-tail flags. Improved exposure integration did not resolve terminal-shape bias. Excluding the prespecified Nemonoxacin, Dexmedetomidine, and Midazolam gave seven-drug GMFE 1.604/1.598 versus 1.326/1.427 for two-compartment PK; the conclusion did not reverse.','',
+        '**Next direction:** diagnose Remdesivir distribution, terminal behavior, and development-fit errors to distinguish parameterization limits from incomplete search. Do not tune on target observations and relabel the result independent validation. Retain evidence gap filling and conflict protection, add real missing/conflicting cases, and test the independent contribution of local sensitivity with equal-budget ablation. No new training starts automatically and the manuscript PDF is not overwritten.','',
+        '[Final item-level CSV](blueprint_design/evidence_policy_20260929/results.csv) · [Full scoring JSON](blueprint_design/evidence_policy_20260929/results.json) · [Follow-up diagnostics](blueprint_design/evidence_policy_20260929/state.json) · [Audit entry point](../scripts/analyze_blueprint_evidence_policy.py)','',
         '```bash','runtime/app-env/bin/python -B scripts/analyze_blueprint_evidence_policy.py --write-summary',
-        '# 若已全部锁定、仅因报告状态冲突暂停，使用独立恢复入口（不会重新模拟）：',
+        '# If everything is locked and only a reporting-state conflict paused the run, use independent recovery without resimulation:',
         'runtime/app-env/bin/python -B scripts/analyze_blueprint_evidence_policy.py --finalize --write-summary','```',END])
     return '\n'.join(out)
 
@@ -168,7 +168,7 @@ def main():
             if BEGIN in text:
                 start=text.index(BEGIN);end=text.index(END,start)+len(END);text=text[:start]+block+text[end:]
             else:
-                anchor='## 4. 实际仿真与蓝图\n';assert anchor in text
+                anchor='## 4. \u5b9e\u9645\u4eff\u771f\u4e0e\u84dd\u56fe\n';assert anchor in text
                 text=text.replace(anchor,anchor+'\n'+block+'\n',1)
             path.write_text(text)
     print(json.dumps({k:summary[k] for k in ('unique_predictions','scoring_statuses','fit_statuses','trial_statuses','effective_fu_policy_over_rf')},ensure_ascii=False,indent=2))

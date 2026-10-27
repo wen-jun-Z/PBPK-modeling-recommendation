@@ -351,7 +351,7 @@ def test_real_scorer_accepts_locked_contract_and_unicode_prediction_hashes(batch
     save(batch.manifest, manifest)
     def unicode_prediction(protocol, scenario, folder, guard):
         result = batch.simulate(protocol, scenario, folder, guard)
-        result["observer_note"] = "合成观察位置"
+        result["observer_note"] = "\u5408\u6210\u89c2\u5bdf\u4f4d\u7f6e"
         return result
     batch.runner.simulate = unicode_prediction
     batch.runner.scorer = hundred_evaluation.score_hundred

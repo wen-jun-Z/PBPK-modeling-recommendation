@@ -480,7 +480,7 @@ def render_online_component_request(
         else 0
     )
     st.subheader("Generate a validated component recommendation")
-    st.caption("相同请求会共享生成结果；其他新请求会等待 GPU 空闲。无需重复点击，已完成的结果会优先复用。")
+    st.caption("Identical requests share generation; other new requests wait for the GPU. Do not submit repeatedly. Completed results are reused first.")
     with st.form("online_component_recommendation_request"):
         left, right = st.columns(2)
         compound = left.selectbox(
@@ -523,7 +523,7 @@ def render_online_component_request(
             "constraints": constraints.strip() or None,
         }
         with st.spinner(
-            "正在等待 GPU 或生成组件推荐；相同请求共享结果。检索、重排、生成和校验完成后会自动显示，请保持页面打开。",
+            "Waiting for the GPU or generating components; identical requests share the result. Keep this page open: results appear after retrieval, reranking, generation, and validation.",
             show_time=True,
         ):
             result = safe_call(

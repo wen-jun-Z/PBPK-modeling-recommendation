@@ -536,8 +536,8 @@ def check_gate():
 
 def publish_summary(evaluation=None):
     folder = ROOT / "experiments/model_recommendation/results_summary"
-    link_name = {"v1": "03_自动文档评分", "v2": "04_修订后自动文档评分",
-                 "validated_v2": "05_已验证自动文档评分"}[PROFILE]
+    link_name = {"v1": "03_automatic_document_assessment", "v2": "04_revised_document_assessment",
+                 "validated_v2": "05_validated_document_assessment"}[PROFILE]
     link = folder / link_name
     if not link.exists():
         link.symlink_to(os.path.relpath(ASSESS, folder), target_is_directory=True)
@@ -547,30 +547,30 @@ def publish_summary(evaluation=None):
     marker, end = f"<!-- {marker_name}:start -->", f"<!-- {marker_name}:end -->"
     state = base.read(RUN / "pipeline_status.json", {})
     worker = base.read(RUN / "status.json", {})
-    msg = (f"{marker}\n## 后续评分运行\n\n"
-           f"更新：{base.now()}。阶段：`{state.get('stage', 'prepare')}`；状态：`{state.get('state', 'starting')}`。"
-           f"新评分目录独立保留，旧 Phi-4 标签不混用。\n\n"
-           "Qwen3.6-27B（关闭扩展思考）为主裁判候选，Phi-4 为固定对照及 5% 异系列复判。"
-           "先完成受控逻辑检查及真实原文对照，再按冻结准入标准进入全部 216,160 对评分。"
-           "控制题不代表专家金标准；真实原文对照没有人工准确率标签。\n\n"
-           f"[当前状态](../../../runtime/deployment/{RUN.name}/pipeline_status.json) · "
-           f"[新评分结果与验证]({link_name}/)\n\n"
-           f"项目根目录命令：`runtime/app-env/bin/python scripts/run_frontier_scoring.py status --profile {PROFILE}`，"
-           f"`... run_frontier_scoring.py stop --profile {PROFILE}`，`... run_frontier_scoring.py start --profile {PROFILE}`。"
-           "停止保留已提交断点；SSH 断开不影响，服务器重启后需手动续跑。\n"
+    msg = (f"{marker}\n## Follow-up assessment run\n\n"
+           f"Updated: {base.now()}. Stage: `{state.get('stage', 'prepare')}`; Status: `{state.get('state', 'starting')}`. "
+           f"The new assessment directory is separate; old Phi-4 labels are not mixed in.\n\n"
+           "Qwen3.6-27B, with extended thinking disabled, is the candidate primary judge; Phi-4 is the fixed reference and 5% cross-family repeat judge. "
+           "Controlled logic checks and real-source comparisons must pass the frozen admission criteria before all 216,160 pairs are assessed. "
+           "Control questions are not expert gold standards; the real-source comparison has no human accuracy labels.\n\n"
+           f"[Current status](../../../runtime/deployment/{RUN.name}/pipeline_status.json) · "
+           f"[New assessment results and validation]({link_name}/)\n\n"
+           f"Command from the project root: `runtime/app-env/bin/python scripts/run_frontier_scoring.py status --profile {PROFILE}`, "
+           f"`... run_frontier_scoring.py stop --profile {PROFILE}`, `... run_frontier_scoring.py start --profile {PROFILE}`. "
+           "Stopping retains committed checkpoints. SSH disconnects do not interrupt the run; server reboot requires manual continuation.\n"
            f"{end}")
     if PROFILE == "v2":
-        disclosure = ("v1 的 Qwen 受控联合判断为 51/64，未通过原准入门槛，失败记录及原源码保留，未进入全量评分。"
-            "v2 仅修订评分说明，Qwen 与 Phi 使用相同新说明；64 个原控制题作为开发回归，64 个新控制题作为独立准入，"
-            "两组分别通过原门槛后才进入全量评分，不合并成 128 个独立验证样本；60 个真实原文对照仍无人工标签。\n\n")
-        msg = msg.replace("新评分目录独立保留，旧 Phi-4 标签不混用。\n\n",
-                          "新评分目录独立保留，旧 Phi-4 标签不混用。\n\n" + disclosure)
+        disclosure = ("The v1 Qwen joint control result was 51/64, below the original admission threshold. Failures and original code remain; full scoring did not begin. "
+            "v2 changes only the scoring instructions, identically for Qwen and Phi. The original 64 controls are development regression and 64 new controls are independent admission checks. "
+            "Both groups must separately pass the original thresholds before full scoring. They are not pooled as 128 independent validation samples; 60 real-source cases still lack human labels.\n\n")
+        msg = msg.replace("The new assessment directory is separate; old Phi-4 labels are not mixed in.\n\n",
+                          "The new assessment directory is separate; old Phi-4 labels are not mixed in.\n\n" + disclosure)
     if PROFILE == "validated_v2":
-        msg = msg.replace("Qwen3.6-27B（关闭扩展思考）为主裁判候选，Phi-4 为固定对照及 5% 异系列复判。"
-            "先完成受控逻辑检查及真实原文对照，再按冻结准入标准进入全部 216,160 对评分。",
-            "Phi-4 使用 v2 评分说明完成全部 216,160 对主评分；Qwen3.6-27B 仅作固定 5% 分歧敏感性复判。"
-            "Phi 在独立控制 59/64、开发回归 60/64 均通过原门槛；Qwen 独立控制 56/64 未达标，不能作为合格裁判或金标准。"
-            "这是看过两者预检后的显式裁判选择修订，不冒充预注册选择；原 v1/v2 失败记录保留，已完成的预检只读复用。")
+        msg = msg.replace("Qwen3.6-27B, with extended thinking disabled, is the candidate primary judge; Phi-4 is the fixed reference and 5% cross-family repeat judge. "
+            "Controlled logic checks and real-source comparisons must pass the frozen admission criteria before all 216,160 pairs are assessed.",
+            "Phi-4 uses v2 instructions for all 216,160 primary judgments; Qwen3.6-27B is used only for the fixed 5% disagreement-sensitivity review. "
+            "Phi passed the original thresholds with 59/64 independent controls and 60/64 development controls. Qwen scored 56/64 on independent controls and did not qualify as a judge or gold standard. "
+            "This is an explicit judge-selection revision after viewing both prechecks, not a preregistered selection. Original v1/v2 failures remain and completed prechecks are reused read-only.")
     if marker in text:
         text = text[:text.index(marker)] + msg + text[text.index(end)+len(end):]
     else:

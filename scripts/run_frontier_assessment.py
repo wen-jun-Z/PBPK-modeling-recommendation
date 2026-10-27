@@ -982,17 +982,17 @@ def write_readme_results(result):
     path = ROOT / "experiments/model_recommendation/README.md"
     first, last = "<!-- frontier-automatic-results:start -->", "<!-- frontier-automatic-results:end -->"
     audit = result["assessment"]
-    lines = [first, "## 自动文档评分结果", "",
-        f"更新：{result.get('created_at', now())}。评分记录 {audit['processed_unique_pairs']:,}/{audit['expected_pairs']:,}；"
-        f"等级已知 {audit.get('grade_known_pairs', 0):,} 对。完整推理配置 {result['method_counts']['included_complete_matrices']}/{result['method_counts']['expected']}。", "",
-        "评分依据是可追溯的模型说明和验证报告，主裁判 Phi-4 14B，固定 5% 用 Qwen2.5-3B 复判一致性。"
-        "它衡量文档支持程度，不能代替独立预测验证或专家金标准。未知不当作不相关。", ""]
+    lines = [first, "## Automatic document assessment results", "",
+        f"Updated: {result.get('created_at', now())}. Assessment records {audit['processed_unique_pairs']:,}/{audit['expected_pairs']:,}; "
+        f"Known grades {audit.get('grade_known_pairs', 0):,} pairs. Complete inference configurations {result['method_counts']['included_complete_matrices']}/{result['method_counts']['expected']}. ", "",
+        "Assessment uses traceable model descriptions and validation reports, with Phi-4 14B as primary judge and Qwen2.5-3B for a fixed 5% consistency review. "
+        "It measures documentary support, not independent predictive validation or expert gold standards. Unknowns are not treated as irrelevant.", ""]
     if audit["state"] != "complete" or result["state"] != "complete":
-        lines.append("自动评分或对比推理尚未全部完成，暂不发布方法排名；全量完成后此处自动更新。")
+        lines.append("Automatic assessment or comparative inference is incomplete. Method rankings will be published here only after full completion.")
     else:
-        lines += ["排序指标以下采用**有明确等级的候选子集**，不是全部 280 个候选的完整标签评价。"
-                  "F1、Brier 和 ECE 仅在固定的 21 药测试部分报告，校准只使用另外 9 药。", "",
-                  "| 方法 | 全库 NDCG@10 可能区间 | 已判子集 NDCG@10 | Recall@10 | MRR | 适用性宏 F1 | Brier | ECE |",
+        lines += ["Ranking metrics below use the **candidate subset with known grades**, not a completely labeled pool of all 280 candidates. "
+                  "F1, Brier, and ECE are reported only for the fixed 21-drug test partition; calibration uses the other nine drugs.", "",
+                  "| Method | Possible full-catalog NDCG@10 range | Judged-subset NDCG@10 | Recall@10 | MRR | Applicability macro F1 | Brier | ECE |",
                   "|---|---:|---:|---:|---:|---:|---:|---:|"]
         def number(value):
             return "—" if value is None else f"{value:.3f}"
@@ -1005,25 +1005,25 @@ def write_readme_results(result):
             lines.append("| " + name.replace("_", "\\_") + " | " + interval + " | " + " | ".join(number(v) for v in
                 [metrics.get("ndcg@10"), metrics.get("recall@10"), metrics.get("mrr"),
                  app.get("macro_f1"), app.get("brier"), app.get("ece")]) + " |")
-        lines += ["", "同药、跨药、同族版本、请求级拒绝、置信度和实际改变的扰动子集分别保存在详细结果中，不加权成一个总分。"]
-        lines += ["全库可能区间反映未知标签；它与按 30 个药物进行 2,000 次重采样的 95% 置信区间不同。"
-                  "后者及相对 BM25 的配对差值见详细结果，不把同药物请求当成独立样本。"]
+        lines += ["", "Detailed results separately report same-drug, cross-drug, same-family versions, request-level rejection, confidence, and actually changed perturbation subsets, without a weighted overall score."]
+        lines += ["The possible full-catalog range reflects unknown labels. It differs from the 95% interval based on 2,000 resamples of 30 drugs. "
+                  "The latter and paired differences against BM25 are in the detailed results; requests for the same drug are not independent samples."]
     measured = read(ASSESS / "measured_outcomes.json", {})
     if measured:
         summary = measured["summary"]
         pooled = measured.get("pooled_available_measurements", {})
-        lines += ["", f"实测资料另行复算：{summary['raw_measured_records']} 条记录，{summary['unique_observation_series']} 条不同观测系列，"
-                  f"覆盖当前 {summary['candidates_with_measured_outcomes']} 个候选。"
-                  "观测窗 AUC、采样 Cmax 和曲线误差不是当前 772 个请求的直接预测结局；不按药名强行关联或计算推荐 regret。"]
+        lines += ["", f"Measured data were recalculated separately: {summary['raw_measured_records']} records, {summary['unique_observation_series']} distinct observation series, "
+                  f"covering {summary['candidates_with_measured_outcomes']} current candidates. "
+                  "Observed-window AUC, sampled Cmax, and curve errors are not direct outcomes of the current 772 requests. Drug-name matching alone is not used to link them or calculate recommendation regret."]
         curve = pooled.get("pooled_point_weighted_curve", {})
         if curve.get("gmfe") is not None:
-            lines += [f"这些保留曲线的点加权 GMFE 为 {curve['gmfe']:.3f}，"
-                      f"{100*curve['two_fold_fraction']:.1f}% 的正浓度对落在两倍误差内。"
-                      "这是不同研究的回顾性汇总，不用于比较推荐算法优劣。"]
-    lines += ["", "[完整指标](frontier_comparison_20260914/assessment/automatic_evaluation.json) · "
-              "[指标表](frontier_comparison_20260914/assessment/automatic_metrics.csv) · "
-              "[真实 PK 复算](frontier_comparison_20260914/assessment/measured_outcomes.json) · "
-              "[固定评分规则](frontier_comparison_20260914/assessment/judge_protocol.json)", last]
+            lines += [f"The retained curves have point-weighted GMFE {curve['gmfe']:.3f}, "
+                      f"{100*curve['two_fold_fraction']:.1f}% of positive concentration pairs are within twofold error. "
+                      "This retrospective aggregation across studies is not a comparison of recommendation algorithms."]
+    lines += ["", "[Complete metrics](frontier_comparison_20260914/assessment/automatic_evaluation.json) · "
+              "[Metric table](frontier_comparison_20260914/assessment/automatic_metrics.csv) · "
+              "[Real PK recalculation](frontier_comparison_20260914/assessment/measured_outcomes.json) · "
+              "[Fixed assessment rules](frontier_comparison_20260914/assessment/judge_protocol.json)", last]
     old = path.read_text()
     block = "\n".join(lines)
     if first in old or last in old:

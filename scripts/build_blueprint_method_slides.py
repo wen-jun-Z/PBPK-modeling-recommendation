@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Chinese blueprint-method deck combining diagrams and brief explanations.
+"""Build the English blueprint-method deck combining diagrams and brief explanations.
 
 The PPTX and vector PDF share one layout. Equations are embedded as high-resolution
 images in PPTX and vectors in PDF. All other text, boxes and arrows remain editable.
@@ -33,7 +33,7 @@ from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Pt
 
 OUT = ROOT / "results/presentations"
-STEM = "PBPK蓝图设计_原理与流程"
+STEM = 'PBPK_blueprint_principles_and_workflow'
 FONT_FILE = ROOT / "runtime/fonts/NotoSansCJKsc-Regular.otf"
 FONT_NAME = "Noto Sans CJK SC"
 FONT = fitz.Font(fontfile=str(FONT_FILE))
@@ -74,15 +74,25 @@ def wrap(text, width, size):
     return lines
 
 
+def fit_size(text, width, height, size, *, line=1.2, minimum=14):
+    """Fit translated prose without changing diagram geometry or equations."""
+    for candidate in range(int(size), minimum-1, -1):
+        rows = wrap(text, width, candidate)
+        if (len(rows)*candidate*line+3 <= height
+                and all(FONT.text_length(row, fontsize=candidate) <= width for row in rows)):
+            return candidate
+    raise ValueError('Shorten text to fit the layout: '+str(text))
+
+
 class Slide:
     def __init__(self, title, subtitle, section, notes):
         self.ops = []
         self.notes = notes
         self.text(42, 24, 800, "PBPK BLUEPRINT   /   " + section, 10, TEAL, bold=True)
-        self.text(42, 55, 876, title, 29, TEAL)
-        self.text(42, 103, 876, subtitle, 14, MUTED)
+        self.text(42, 55, 876, title, fit_size(title, 876, 44, 29, line=1.4, minimum=22), TEAL)
+        self.text(42, 103, 876, subtitle, fit_size(subtitle, 876, 23, 14, line=1.4, minimum=11), MUTED)
         self.line([(42, 494), (918, 494)], "DCE5E8", .8)
-        self.text(42, 505, 805, "蓝图设计 · 输入—计算—输出 · 2026.10.13", 9, MUTED)
+        self.text(42, 505, 805, 'Blueprint design · Inputs—computation—outputs · 2026.10.13', 9, MUTED)
 
     def text(self, x, y, w, value, size=18, color=INK, bold=False, align="left", line=1.4):
         rows = wrap(value, w, size)
@@ -202,8 +212,8 @@ def explain(s, blocks, takeaway):
     """Readable on-slide prose, deliberately separate from technical speaker notes."""
     s.line([(585,145),(585,437)],'DCE5E8',1)
     for y,(title,body) in zip((149,249,349),blocks):
-        s.text(609,y,309,title,19,TEAL,bold=True,line=1.2)
-        h=s.text(609,y+31,309,body,17,INK,line=1.28)
+        s.text(609,y,309,title,fit_size(title,309,27,19,minimum=14),TEAL,bold=True,line=1.2)
+        h=s.text(609,y+31,309,body,fit_size(body,309,69,17,line=1.28,minimum=12),INK,line=1.28)
         if h > 69:raise ValueError('Explanation too long: '+body)
     s.rect(42,457,876,32,PALE,None)
     s.text(54,462,852,takeaway,14,TEAL,line=1.25)
@@ -249,8 +259,8 @@ def pdf_arrow(page,a,b,color,width):
 
 
 def render(slides, *, output_dir=None, stem=None, source_pptx=None, source_pdf=None,
-           title="PBPK蓝图设计：原理、输入、计算与输出",
-           subject="人体方程、证据约束校准、可行性检查与锁定预测",
+           title='PBPK blueprint design: principles, inputs, computation, and outputs',
+           subject='Physiological equations, evidence-constrained calibration, feasibility checks, and locked prediction',
            required_terms=None, source_indices=None, prepend=True, toc=None):
     output_dir=Path(output_dir or OUT); stem=stem or STEM
     output_dir.mkdir(parents=True,exist_ok=True)
@@ -448,7 +458,7 @@ def render(slides, *, output_dir=None, stem=None, source_pptx=None, source_pdf=N
         x=10+(i%2)*740;y=10+(i//2)*430
         heading=headings[i]
         contact.paste(img,(x,y));draw.text((x+8,y+407),f"{i+1:02d}  {heading}",font=font,fill='#255E72')
-    preview=output_dir/(stem+"_预览.png");contact.save(preview)
+    preview=output_dir/(stem+'_preview.png');contact.save(preview)
     doc.close()
     # Artifact integrity, actual XML content and readable-page checks.
     check=Presentation(pptx_path)
@@ -460,7 +470,7 @@ def render(slides, *, output_dir=None, stem=None, source_pptx=None, source_pdf=N
         assert len(final)==total_count
         text=unicodedata.normalize('NFKC','\n'.join(p.get_text() for p in final))
         text=text.replace('\u2010','-').replace('\u2011','-')
-        for term in required_terms or ['人体','微分方程','校准','证据']:
+        for term in required_terms or ['Human','Differential equations','Calibration','Evidence']:
             assert term in text,term
         for page in final:
             for block in page.get_text('dict')['blocks']:
@@ -474,8 +484,8 @@ def render(slides, *, output_dir=None, stem=None, source_pptx=None, source_pdf=N
 
 
 def module_boundary_slide():
-    s=Slide('先分清：推荐网络选模型，蓝图方程算浓度',
-        '前两部分的神经网络服务于证据和模型选择；当前蓝图没有神经网络预测浓度。',
+    s=Slide('Selection networks choose models; blueprint equations predict PK',
+        'The earlier neural networks support evidence and model selection. The current blueprint does not predict concentrations with a neural network.',
         'MODULE BOUNDARY','')
     for j,(x,n,col) in enumerate([(88,5,TEAL),(238,4,GREEN),(394,2,GOLD)]):
         for k in range(n):
@@ -486,16 +496,16 @@ def module_boundary_slide():
                 for kk in range(nn):
                     ny=163+kk*30+(5-nn)*15
                     s.line([(x+14,yy+6),(nx-2,ny+6)],LINE,.55)
-    s.text(47,320,167,'716 维拼接输入',15,TEAL,align='center')
-    s.text(215,320,145,'128 维隐藏层',15,GREEN,align='center')
-    s.text(376,320,174,'排序等输出头',15,GOLD,align='center')
+    s.text(47,320,167,'716-dimensional input',15,TEAL,align='center')
+    s.text(215,320,145,'128-dimensional hidden layer',15,GREEN,align='center')
+    s.text(376,320,174,'Ranking and other heads',15,GOLD,align='center')
     s.eq(52,346,512,34,r'\mathbf{x}=[\mathbf{u}_Q;\mathbf{u}_m;|\mathbf{u}_Q-\mathbf{u}_m|;\mathbf{u}_Q\odot\mathbf{u}_m;\mathbf{f}]',EQUATION_FONT_SIZE,TEAL)
     s.eq(52,384,512,33,r'\mathbf{h}=\mathrm{GELU}(\mathrm{LN}(W\mathbf{x}+\mathbf{b}))',EQUATION_FONT_SIZE,TEAL)
     s.eq(52,422,512,33,r's_{\rm doc}=\mathbf{w}_s^{\mathsf{T}}\mathbf{h}+b_s',EQUATION_FONT_SIZE,TEAL)
-    explain(s,[('网络输入的是需求与候选','两侧文本各变成 128 维向量，连同差异、乘积和 204 维条件拼成 716 维。'),
-               ('网络输出的是选择结果','MLP 是多层感知机；线性变换、归一化和激活函数把输入变为评分，不生成药代曲线。'),
-               ('无法复用时才进入蓝图','虚拟药 X 没有可复用模型，但有药物证据和少量开发观测；下面用方程建模和校准。')],
-            '交接：模型推荐无适用候选＋药物证据与请求 → 人体模板、方程校准和目标预测。')
+    explain(s,[('Network inputs: requests and candidates','Each text is encoded into 128 dimensions. Differences, products, and 204 condition features form a 716-dimensional input.'),
+               ('Network outputs: selection scores','An MLP uses linear transformations, normalization, and activation functions to calculate scores, not PK curves.'),
+               ('A blueprint follows when reuse is unavailable','Hypothetical drug X has evidence and a few development observations but no reusable model. Equations then support construction and calibration.')],
+            'Handoff: no suitable candidate + drug evidence and request → physiology, equation calibration, and target prediction.')
     return s
 
 
@@ -508,11 +518,11 @@ def refresh_current_presentation():
     pptx_path,pdf_path=OUT/(STEM+'.pptx'),OUT/(STEM+'.pdf')
     old_ppt=pptx_path.read_bytes();old_pdf=pdf_path.read_bytes()
     Presentation(io.BytesIO(old_ppt))  # Verify the source before replacing the requested deck.
-    groups=[('从零认识 PK 与 PBPK',make_foundation_slides()[:4]),
-            ('蓝图设计：构建、计算与验证',make_slides()),
-            ('蓝图结果与流程回顾',make_teaching_conclusion_slides())]
+    groups=[('PK and PBPK from first principles',make_foundation_slides()[:4]),
+            ('Blueprint design: construction, computation, and validation',make_slides()),
+            ('Blueprint results and workflow recap',make_teaching_conclusion_slides())]
     main_count=sum(len(pages) for _,pages in groups)
-    groups += [('技术备查：PBPK 方程与终点',make_blueprint_technical_slides())]
+    groups += [('Technical reference: PBPK equations and endpoints',make_blueprint_technical_slides())]
     fresh=[];toc=[]
     for heading,pages in groups:
         toc.append([1,heading,len(fresh)+1])
@@ -523,15 +533,15 @@ def refresh_current_presentation():
         assert len(page.ops[1]['rows'])==1, 'Shorten title: '+str(page.ops[1]['rows'])
         assert len(page.ops[2]['rows'])==1, 'Shorten subtitle: '+str(page.ops[2]['rows'])
         if i>main_count:
-            page.ops[4]['rows']=[f'技术备查 · 首次讲解可跳过 · 正文为第 1–{main_count} 页']
+            page.ops[4]['rows']=[f'Technical reference · Optional on first reading · Main slides 1–{main_count}']
         page.text(855,503,63,f'{i:02d} / {total:02d}',10,TEAL,align='right')
         page.notes=''
     work_root=ROOT/'runtime/presentation_build';work_root.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=work_root,prefix='beginner_teaching-') as tmp:
         work=Path(tmp)
         render(fresh,output_dir=work,
-               title='从零理解PBPK蓝图设计：原理与流程',toc=toc,
-               required_terms=['蓝图设计','微分方程','校准','教学','人体'])
+               title='Understanding PBPK blueprints: principles and workflow',toc=toc,
+               required_terms=['Blueprint design','Differential equations','Calibration','Teaching','Human'])
         new_ppt,new_pdf=work/(STEM+'.pptx'),work/(STEM+'.pdf')
         updated=Presentation(new_ppt)
         assert len(updated.slides)==total
@@ -543,13 +553,13 @@ def refresh_current_presentation():
                 assert sh.top+sh.height<=updated.slide_height+12700
         blueprint_text='\n'.join(sh.text for page in updated.slides
                                 for sh in page.shapes if sh.has_text_frame)
-        assert not re.search(r'组件推荐|模型推荐|\bRF\b|随机森林|main\.tex|permeability_model\.py',blueprint_text)
+        assert not re.search('(?i)component recommendation|model recommendation|random forest|\u7ec4\u4ef6\u63a8\u8350|\u6a21\u578b\u63a8\u8350|\\bRF\\b|\u968f\u673a\u68ee\u6797|main\\.tex|permeability_model\\.py',blueprint_text)
         formula_sizes={op['size'] for page in fresh for op in page.ops
                        if op['kind']=='equation' and op.get('role','formula')=='formula'}
         assert formula_sizes=={EQUATION_FONT_SIZE}
         if pptx_path.read_bytes()!=old_ppt or pdf_path.read_bytes()!=old_pdf:
             raise RuntimeError('Presentation changed during build; refusing to overwrite concurrent edits')
-        for suffix in ['.pptx','.pdf','_预览.png']:
+        for suffix in ['.pptx','.pdf','_preview.png']:
             (work/(STEM+suffix)).replace(OUT/(STEM+suffix))
     print({'total_slides':total,'beginner_main_slides':main_count,'technical_reference_slides':total-main_count,
            'formula_font_size_pt':EQUATION_FONT_SIZE,'notes_parts':0,'pdf_navigation_sections':len(toc)})

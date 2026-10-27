@@ -66,7 +66,7 @@ def execute(runtime, tmp_path, value):
 
 def test_compact_large_snapshot_preserves_values_and_engineering_gates(runtime, monkeypatch, tmp_path):
     value = snapshot()
-    value["SyntheticPadding"] = [{"Ordered": ["é", "温度", 1.25, None, False]}] * 110000
+    value["SyntheticPadding"] = [{"Ordered": ["é", "\u6e29\u5ea6", 1.25, None, False]}] * 110000
     assert len((json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode()) > LIMIT
     assert len(compact(value)) < LIMIT
     calls = mock_boundary(runtime, monkeypatch)
@@ -87,7 +87,7 @@ def test_compact_large_snapshot_preserves_values_and_engineering_gates(runtime, 
 
 def test_small_snapshot_keeps_original_pretty_bytes(runtime, monkeypatch, tmp_path):
     value = snapshot()
-    value["Labels"] = ["温度", "é", "a\\b", "line\nbreak"]
+    value["Labels"] = ["\u6e29\u5ea6", "é", "a\\b", "line\nbreak"]
     mock_boundary(runtime, monkeypatch)
     execute(runtime, tmp_path, value)
     assert (tmp_path / "execution/snapshot.json").read_bytes() == (

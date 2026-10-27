@@ -243,12 +243,12 @@ def progress():
     completed = sum(len(list((OUT / m / f"runs/seed{s}").glob("fold*/*/complete.json"))) for m, s in JOBS)
     state = read(OUT / "status.json") if (OUT / "status.json").exists() else {}
     bar = "█" * (completed * 30 // 100) + "░" * (30 - completed * 30 // 100)
-    print(f"[{bar}] {completed:3d}/100 新增拟合 | 原模型20次复用 | {state.get('phase','未启动')}")
+    print(f"[{bar}] {completed:3d}/100 new fits | 20 original-model fits reused | {state.get('phase','Not started')}")
     for path in sorted((OUT / "state").glob("*.json")):
         row = read(path)
         print(f"  {row['method']:18s} seed{row['seed']} {row['phase']:10s} fold={row.get('fold','-')} fit={row.get('fit','-')} epoch={row.get('epoch','-')}")
     if state.get("error"):
-        print("错误：", state["error"])
+        print('Error: ', state["error"])
 
 
 def supervise(device, workers):

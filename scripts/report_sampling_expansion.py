@@ -465,9 +465,9 @@ def plot(export=False):
             _, after = tail.split(stop)
             text = before.rstrip()+"\n"+after.lstrip()
         caption = ("\n"+start+"\n\n![Thirty-drug sampling evaluation](comparison.png)\n\n"
-                   "图中上部为新增20药的主要比较，区间为研究聚类bootstrap的95%区间；下部逐药显示相对时间规则的误差比，低于1代表改善。"
-                   "原10药保留原来的整组留出选点，新增20药使用仅由原10药训练后冻结的选点模型。全部30药及缺失项都展示；星号是同研究不同组，不能解释为独立跨研究验证。"
-                   "原始来源及模型文件通过哈希核验，本轮结果未写入论文PDF。\n\n"+stop+"\n")
+                   'The upper panel compares the additional 20 drugs with study-cluster bootstrap 95% intervals; the lower panel shows per-drug error ratios against time coverage, where values below 1 indicate improvement.'
+                   'Original-ten drugs retain their grouped held-out selections; the additional 20 use the model trained and frozen on the original ten only. All 30 drugs and missing entries are shown. Asterisks indicate different arms of the same study, not independent cross-study validation.'
+                   'Original sources and model files passed hash checks; these results were not written into the manuscript PDF.\n\n'+stop+"\n")
         path.write_text(text.rstrip()+"\n"+caption)
     import matplotlib.pyplot as plt
     plt.close(fig)

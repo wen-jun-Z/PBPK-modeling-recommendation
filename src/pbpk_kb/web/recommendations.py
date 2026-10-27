@@ -66,10 +66,10 @@ def sha(path):
 
 def job_directory(job_id):
     if not re.fullmatch(r'[a-f0-9]{32}', job_id):
-        raise HTTPException(404, '任务不存在')
+        raise HTTPException(404, 'Job not found')
     path = scoped(RUN / job_id)
     if not path.is_dir():
-        raise HTTPException(404, '任务不存在')
+        raise HTTPException(404, 'Job not found')
     return path
 
 
@@ -91,7 +91,7 @@ def state(directory):
         except (OSError, ValueError):
             alive = False
         if not alive and time.time() - result['created_epoch'] > 10:
-            result.update(status='failed', stage='interrupted', message='推理进程已结束，结果未完成；可以重新提交。', updated_at=stamp())
+            result.update(status='failed', stage='interrupted', message='The inference process ended before completion. You can submit again.', updated_at=stamp())
             write(directory / 'status.json', result)
     return result
 
@@ -110,10 +110,10 @@ def clean_environment():
 def valid_payload(request):
     raw = request.model_dump(mode='json')
     if len(json.dumps(raw, ensure_ascii=False).encode()) > 20000:
-        raise HTTPException(422, '请求过长，请简化条件。')
+        raise HTTPException(422, 'Request is too long; simplify the conditions.')
     for value in raw.values():
         if isinstance(value, str) and len(value) > 2048:
-            raise HTTPException(422, '单个请求字段过长。')
+            raise HTTPException(422, 'A request field is too long.')
     return raw
 
 
@@ -130,12 +130,12 @@ def recommend(request: RecommendationRequest):
             if previous['status'] in ACTIVE:
                 if previous['request_sha256'] == digest:
                     return JSONResponse(public_state(previous), status_code=202)
-                raise HTTPException(409, {'message': '已有模型推荐正在运行，可查看该任务后再提交。', **public_state(previous)})
+                raise HTTPException(409, {'message': 'A model recommendation job is already running. Review it before submitting another.', **public_state(previous)})
         job_id = uuid.uuid4().hex
         directory = RUN / job_id
         directory.mkdir(mode=0o700)
         write(directory / 'request.json', payload)
-        record = {'job_id': job_id, 'status': 'queued', 'stage': 'queued', 'message': '正在准备模型推荐',
+        record = {'job_id': job_id, 'status': 'queued', 'stage': 'queued', 'message': 'Preparing model recommendations',
                   'created_at': stamp(), 'created_epoch': time.time(), 'updated_at': stamp(),
                   'request_sha256': digest}
         write(directory / 'status.json', record)
@@ -159,7 +159,7 @@ def supervise(process, directory):
         process.wait(timeout=10)
         record = read(directory / 'status.json')
         if record['status'] in ACTIVE:
-            record.update(status='failed', stage='timeout', message='单次推荐超时，已停止本次任务。', updated_at=stamp())
+            record.update(status='failed', stage='timeout', message='The recommendation timed out and this job was stopped.', updated_at=stamp())
             write(directory / 'status.json', record)
 
 
@@ -190,17 +190,17 @@ def get_job(job_id: str):
 def download_job(job_id: str):
     directory = job_directory(job_id)
     if state(directory)['status'] != 'complete':
-        raise HTTPException(409, '任务尚未完成')
+        raise HTTPException(409, 'Job is not complete')
     return JSONResponse(display_result(read(directory / 'result.json')), headers={'Content-Disposition': 'attachment; filename=pbpk-model-recommendation.json'})
 
 
 DISPLAY_LAYERS = (
-    ('validated_reuse', '已通过当前用途检查'),
-    ('controlled_adaptation_candidate', '需受控适配'),
-    ('same_compound_qualification_candidate', '同药模型，需补充验证'),
-    ('mechanistic_reference', '跨药物机制参考'),
-    ('blocked', '当前不可使用'),
-    ('not_checked', '用途尚未确认'),
+    ('validated_reuse', 'Passed current applicability checks'),
+    ('controlled_adaptation_candidate', 'Controlled adaptation required'),
+    ('same_compound_qualification_candidate', 'Same compound; further validation needed'),
+    ('mechanistic_reference', 'Cross-compound mechanism reference'),
+    ('blocked', 'Not currently applicable'),
+    ('not_checked', 'Applicability not yet confirmed'),
 )
 
 
@@ -260,7 +260,7 @@ def display_result(result):
             'raw_top_candidates': result.get('raw_top_candidates', result.get('top_candidates', [])),
             'candidate_groups': [{'id': layer, 'label': label, 'count': len(groups[layer])}
                                  for layer, label in DISPLAY_LAYERS],
-            'display_notice': '先按用途检查分层，再在同层内按研究分数排序；待验证不等于可直接使用。原始研究排名完整保留在下载中。'}
+            'display_notice': 'Candidates are grouped by applicability, then ranked within each group. Pending validation does not permit direct reuse. The download preserves the full original ranking.'}
 
 
 def input_query(request: RecommendationRequest):
@@ -325,7 +325,7 @@ def select_folds(compounds, query_records, folds):
     matched = {i for i, row in enumerate(query_records) if set(compounds) & {c.casefold() for c in row['compounds']}}
     selected = [i for i, fold in enumerate(folds) if not matched or matched <= set(fold['outer_test'])]
     if not selected:
-        raise ValueError('该多药请求跨越原训练分组，目前没有同时排除这些药物训练的权重；请使用用途检查或分开查看。')
+        raise ValueError('This multi-drug request spans training groups, and no saved weights exclude all these drugs together. Use applicability checks or inspect each drug separately.')
     return selected
 
 
@@ -346,41 +346,41 @@ def infer(request: RecommendationRequest, progress=lambda stage, message: None):
     from pbpk_kb.recommendation.public_model_service import recommend_public_model, PublicModelRecommendationError
     from sqlalchemy import text
 
-    progress('loading', '正在核验模型与候选库')
+    progress('loading', 'Verifying the model and candidate library')
     torch.set_num_threads(2)
     protocol = read(LIGHT / 'protocol.json')
     manifest = read(LIGHT / 'cache/manifest.json')
     binding = read(LIGHT / 'cache/binding.json')
     if not manifest.get('completed') or sha(LIGHT / 'cache/manifest.json') != protocol['cache_manifest']['sha256']:
-        raise ValueError('冻结候选表示与模型协议不一致')
+        raise ValueError('Frozen candidate representations do not match the model protocol')
     for name in ('scripts/pbpk_match_light_training.py', 'src/pbpk_kb/recommendation/pbpk_match_v2/data.py'):
         if sha(ROOT / name) != protocol['implementation_sha256'][name]:
-            raise ValueError('推理依赖与冻结训练版本不一致')
+            raise ValueError('Inference dependencies differ from the frozen training versions')
     if sha(LIGHT / 'cache/binding.json') != manifest['binding_sha256'] or sha(LIGHT / 'cache/inputs.npz') != manifest['array_sha256']:
-        raise ValueError('冻结候选表示校验失败')
+        raise ValueError('Frozen candidate representation verification failed')
     candidates = manifest['candidate_records']
     ids = [c['candidate_id'] for c in candidates]
     if ids != protocol['candidate_ids'] or len(ids) != 280 or manifest['feature_names'] != feature_names():
-        raise ValueError('候选或条件特征与训练版本不一致')
+        raise ValueError('Candidate or condition features differ from the training version')
     with np.load(LIGHT / 'cache/inputs.npz', allow_pickle=False) as arrays:
         embeddings = arrays['raw_candidate_embeddings'].astype(np.float32)
     query, design = input_query(request)
     folds = select_folds(query['compounds'], manifest['query_records'], protocol['folds'])
-    progress('encoding', '正在用服务器 GPU 编码本次请求')
+    progress('encoding', 'Encoding the request on the server GPU')
     vectors, encoder = encode_new_query([query['text']], binding['encoder'], device='cuda:0', batch_size=1)
     features = np.asarray([pair_feature_row(query, c, design=design) for c in candidates], np.float32)
-    progress('ranking', '正在对全部 280 个版本进行排序')
+    progress('ranking', 'Ranking all 280 model versions')
     outputs = []
     for fold in folds:
         directory = LIGHT / f'runs/seed17/fold{fold}/outer'
         receipt = read(directory / 'complete.json')
         for name in ('heads.pt', 'metadata.json', 'binding.json'):
             if sha(directory / name) != receipt['artifacts_sha256'][name]:
-                raise ValueError('小网络权重校验失败')
+                raise ValueError('Small-network weight verification failed')
         metadata = read(directory / 'metadata.json')
         job_binding = read(directory / 'binding.json')
         if job_binding['protocol_sha256'] != sha(LIGHT / 'protocol.json') or job_binding['configuration']['selection_sha256'] != sha(directory.parent / 'selection.json'):
-            raise ValueError('推理权重与分组选择绑定不一致')
+            raise ValueError('Inference weights do not match the selected training group')
         selection = read(directory.parent / 'selection.json')
         saved = torch.load(directory / 'heads.pt', map_location='cpu', weights_only=True)
         model = LightMatch(metadata['embedding_size'], len(metadata['feature_mean']), metadata['width'], metadata['dropout']).to('cuda:0').eval()
@@ -402,10 +402,10 @@ def infer(request: RecommendationRequest, progress=lambda stage, message: None):
         scores = np.mean([rankdata(value[0], method='average') / len(ids) for value in outputs], axis=0)
         probabilities = np.mean([value[1] for value in outputs], axis=0)
     if scores.shape != (280,) or probabilities.shape != (280, 3) or not np.isfinite(scores).all() or not np.isfinite(probabilities).all():
-        raise ValueError('全候选推理结果不完整')
+        raise ValueError('Full-candidate inference is incomplete')
     identity = catalog_identity_policy(query, candidates)
     selected = select_policy_topk(scores, identity, k=10)
-    progress('checking', '正在检查用途条件与库中模型版本')
+    progress('checking', 'Checking applicability and catalog model versions')
     policy, policy_error = None, None
     with SessionLocal() as db:
         mapping = {str(row['model_version_id']): dict(row) for row in db.execute(text('''
@@ -416,7 +416,7 @@ def infer(request: RecommendationRequest, progress=lambda stage, message: None):
         try:
             policy = recommend_public_model(session=db, request=request)
         except PublicModelRecommendationError:
-            policy_error = '该请求暂时无法完成用途检查，所有结果保持待核验。'
+            policy_error = 'Applicability checks could not be completed; all results remain unverified.'
     gates = {str(c['model_version_id']): c for c in (policy or {}).get('candidates', [])}
     ordered = []
     for decision in selected['all_candidates']:
@@ -449,10 +449,10 @@ def infer(request: RecommendationRequest, progress=lambda stage, message: None):
             'checkpoint_use': {'folds': folds, 'rule': 'Known compounds use a held-out-compound research head; unseen compounds use mean fold percentile ranks.',
                                'new_training': False, 'component_enhancement': False, 'error_correction': False},
             'encoder': {'model': encoder['repo'], 'device': encoder['device'], 'peak_gpu_gib': encoder['gpu_peak_allocated_gib']},
-            'limitations': ['这是当前 PBPK-Match light 的研究推理；保存的分组权重没有被宣称为独立验证的生产模型。',
-                '分数用于候选排序；Y/N/U 表示文档支持概率，不代表真实预测准确率。',
-                '用途检查单独保留，研究排名不覆盖许可、适用范围或执行验证条件。',
-                '本次没有进行 PBPK 仿真。浓度曲线页面展示已完成研究中的固定案例。']}
+            'limitations': ['This is PBPK-Match light research inference; saved grouped weights are not claimed to be independently validated production models.',
+                'Scores rank candidates; Y/N/U represent document-support probabilities, not actual prediction accuracy.',
+                'Applicability checks are retained separately; research rankings do not override license, scope, or execution-validation requirements.',
+                'No PBPK simulation was performed for this request. The curve page shows fixed cases from completed research.']}
     return display_result(result)
 
 
@@ -468,7 +468,7 @@ def worker(job_id):
         record.update(status='running', stage=stage, message=message, updated_at=stamp())
         write(directory / 'status.json', record)
     def expired(signum, frame):
-        raise TimeoutError('单次推荐超过 240 秒，已停止并释放本次资源。')
+        raise TimeoutError('The recommendation exceeded 240 seconds; it stopped and released its resources.')
     signal.signal(signal.SIGALRM, expired)
     signal.alarm(JOB_SECONDS)
     try:
@@ -476,12 +476,12 @@ def worker(job_id):
         result = infer(request, progress)
         write(directory / 'result.json', result)
         record = read(directory / 'status.json')
-        record.update(status='complete', stage='complete', message='模型推荐已完成', updated_at=stamp())
+        record.update(status='complete', stage='complete', message='Model recommendations completed', updated_at=stamp())
         write(directory / 'status.json', record)
     except Exception as error:
         record = read(directory / 'status.json')
         # No arbitrary provider/network exception text is exposed to the browser.
-        detail = str(error) if isinstance(error, (ValueError, TimeoutError)) else '模型推理未完成（' + type(error).__name__ + '），已释放本次任务；请检查本项目部署。'
+        detail = str(error) if isinstance(error, (ValueError, TimeoutError)) else 'Model inference did not complete (' + type(error).__name__ + '); job resources were released. Check this project deployment.'
         record.update(status='failed', stage='failed', message=detail[:500], updated_at=stamp())
         write(directory / 'status.json', record)
         print(type(error).__name__ + ': ' + detail[:500], flush=True)

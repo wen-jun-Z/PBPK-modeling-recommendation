@@ -75,7 +75,25 @@ class Figure:
                           (x-10*cos(a)-4*sin(a), y-10*sin(a)+4*cos(a))], color, arrowhead=True)
 
     def text(self, x, y, w, h, value, size=24, color=INK, align='left', bold=False):
-        font = ImageFont.truetype(str(FONT), round(size*SCALE))
+        # Fit English labels within the existing editable diagram geometry.
+        original = value
+        for candidate in range(round(size), min(12 if w < 100 else 14, round(size))-1, -1):
+            font = ImageFont.truetype(str(FONT), round(candidate*SCALE))
+            rows = []
+            for paragraph in original.split('\n'):
+                line = ''
+                for word in paragraph.split(' '):
+                    proposed = (line+' '+word).strip()
+                    if line and font.getlength(proposed)/SCALE > w-3:
+                        rows.append(line)
+                        line = word
+                    else:
+                        line = proposed
+                rows.append(line)
+            if (all(font.getlength(row)/SCALE <= w-3 for row in rows)
+                    and len(rows)*candidate*1.28 <= h+1):
+                value, size = '\n'.join(rows), candidate
+                break
         for line in value.split('\n'):
             tw = font.getlength(line)/SCALE
             if tw > w-3:
@@ -88,15 +106,15 @@ class Figure:
         self.add('text', x=x, y=y, w=w, h=h, value=value, size=size, color=color, align=align, bold=bold)
 
     def heading(self, variant):
-        self.text(48, 24, 1810, 66, '证据驱动的 PBPK 建模推荐框架', 46, bold=True)
-        self.text(51, 96, 1300, 35, '资料与知识库  →  组件推荐  →  模型推荐  →  蓝图设计', 23, MUTED)
+        self.text(48, 24, 1810, 66, 'Evidence-driven PBPK modeling recommendation', 46, bold=True)
+        self.text(51, 96, 1300, 35, 'Data and knowledge base → Components → Models → Blueprint design', 23, MUTED)
         self.text(1570, 101, 296, 30, variant, 20, MUTED, 'right')
         self.line([(48,148),(1872,148)], '#DDE3E7', 1.4)
 
     def footer(self):
         self.line([(48,1024),(1872,1024)], '#DDE3E7', 1.3)
         self.text(51,1034,1810,35,
-                  '全程证据溯源：原始资料 → 证据引用 → 推荐依据 → 参数来源    |    蓝图输出 → 仿真、校准与独立验证',
+                  'Traceability: source material → evidence citations → recommendations → parameter sources | Blueprint → simulation, calibration, independent validation',
                   21,MUTED)
 
     def panel(self, x,y,w,h,letter,title,index,subtitle=None):
@@ -255,15 +273,16 @@ def band(f,x,y,w,text,index,size=21):
 def tile(f, cx, y, title, lines, kind, index, w=265, icon_size=72, size=25):
     pale,border,color=PALETTES[index]
     if kind=='adme':
-        for j,(organ,label) in enumerate(zip(('gut','blood','liver','kidney'),('吸收','分布','代谢','排泄'))):
+        # ADME initials keep the small organ icons readable; full names appear in the workflow.
+        for j,(organ,label) in enumerate(zip(('gut','blood','liver','kidney'),('A','D','M','E'))):
             xx=cx-115+j*64
             icon(f,organ,xx,y+1,39,color,pale)
             f.text(xx-5,y+48,49,22,label,15,color,'center')
             if j<3:f.line([(xx+42,y+23),(xx+58,y+23)],color,1.4,True)
     elif kind=='physiology':
         # Schematic blood/organ connections; labels and edges remain native.
-        nodes={'血液':(cx,y+33),'肠道':(cx-89,y+9),'肝脏':(cx-89,y+63),
-               '肾脏':(cx+89,y+9),'组织':(cx+89,y+63)}
+        nodes={'Blood':(cx,y+33),'Gut':(cx-89,y+9),'Liver':(cx-89,y+63),
+               'Kidney':(cx+89,y+9),'Tissue':(cx+89,y+63)}
         f.line([(cx-24,y+31),(cx-65,y+11)],color,1.4,True)
         f.line([(cx-89,y+23),(cx-89,y+49)],color,1.4,True)
         f.line([(cx-65,y+61),(cx-24,y+41)],color,1.4,True)
@@ -281,29 +300,29 @@ def tile(f, cx, y, title, lines, kind, index, w=265, icon_size=72, size=25):
 
 
 def quadrants():
-    f=Figure('01_four_panel','四宫格 · 论文方法总图')
-    f.heading('方案 01 / 四宫格')
-    f.panel(48,184,880,353,'a','资料收集与建立知识库',0)
-    f.panel(992,184,880,353,'b','组件推荐',1)
-    f.panel(48,631,880,371,'c','模型推荐',2)
-    f.panel(992,631,880,371,'d','蓝图设计',3)
+    f=Figure('01_four_panel','Four panels · Method overview')
+    f.heading('Design 01 / Four panels')
+    f.panel(48,184,880,353,'a','Data and knowledge base',0)
+    f.panel(992,184,880,353,'b','Component recommendation',1)
+    f.panel(48,631,880,371,'c','Model recommendation',2)
+    f.panel(992,631,880,371,'d','Blueprint design',3)
     specs=[
-        (48,184,0,[('多源资料收集',['文献 · 标签 · 临床 PK','公开模型与版本'],'documents'),
-                   ('证据抽取与质控',['规则 + LLM 辅助','身份、单位与冲突校验'],'extract'),
-                   ('知识图谱与索引',['药物—机制—器官—参数','证据库 + 模型目录'],'graph')],
-         '可溯源证据、模型资产与版本化模板'),
-        (992,184,1,[('建模需求解析',['药物 · 人群 · 给药方案','预测目标与约束'],'query'),
-                    ('证据检索与重排',['关键词 + 向量 + 子图','相关性与机制一致性'],'retrieval'),
-                    ('组件推断与校验',['组件、机制与参数候选','对应证据引用与约束'],'adme')],
-         '输出：组件建议 + 结构化需求画像'),
-        (48,631,2,[('候选模型召回',['具体模型版本与结构','场景、生物学与工程约束'],'model'),
-                   ('需求匹配与排序',['机制覆盖与结构匹配','适用性与证据支持'],'rank'),
-                   ('用途判断与选择',['复用 / 受控适配 / 拒绝','候选比较与推荐依据'],'decision')],
-         '可靠模型 → 复用或受控适配 → 仿真与验证'),
-        (992,631,3,[('结构模板与实例化',['无可靠复用模型时启动','房室、器官与过程连接'],'physiology'),
-                    ('参数绑定与溯源',['组件需求 + 参数证据','量值、单位与来源'],'parameters'),
-                    ('校验、编译与导出',['结构 · 量纲 · 质量守恒','版本化蓝图与仿真方案'],'compile')],
-         '蓝图 + 参数清单 + 执行接口 → 仿真与验证'),
+        (48,184,0,[('Collect multiple sources',['Literature · labels · clinical PK','Public models and versions'],'documents'),
+                   ('Extract and check evidence',['Rules + LLM assistance','Identity, units, and conflicts'],'extract'),
+                   ('Knowledge graph and index',['Drug–mechanism–organ–parameter','Evidence store + model catalog'],'graph')],
+         'Traceable evidence, model assets, and versioned templates'),
+        (992,184,1,[('Parse modeling needs',['Drug · population · dosing','Prediction goals and constraints'],'query'),
+                    ('Retrieve and rerank',['Keywords + vectors + subgraphs','Relevance and mechanism agreement'],'retrieval'),
+                    ('Infer and check components',['Components, mechanisms, parameters','Evidence citations and constraints'],'adme')],
+         'Output: components + structured request profile'),
+        (48,631,2,[('Retrieve model candidates',['Specific versions and structures','Scenario, biological, engineering limits'],'model'),
+                   ('Match and rank requests',['Mechanism and structure coverage','Applicability and evidence support'],'rank'),
+                   ('Assess use and select',['Reuse / controlled adaptation / reject','Candidate comparisons and rationale'],'decision')],
+         'Reliable model → reuse or controlled adaptation → simulate and validate'),
+        (992,631,3,[('Instantiate a template',['Start when reliable reuse is unavailable','Connect compartments, organs, processes'],'physiology'),
+                    ('Bind sourced parameters',['Component needs + parameter evidence','Values, units, and sources'],'parameters'),
+                    ('Validate, compile, export',['Structure · dimensions · mass balance','Versioned blueprint and simulation plan'],'compile')],
+         'Blueprint + parameters + execution interface → simulate and validate'),
     ]
     for x,y,i,items,out in specs:
         f.label_context='abcd'[i]+' detail'
@@ -318,36 +337,36 @@ def quadrants():
     f.line([(937,359),(984,359)],PALETTES[0][2],2.5,True)
     f.line([(1432,548),(1432,576),(486,576),(486,620)],PALETTES[1][2],2.3,True)
     f.rect(642,552,632,45,WHITE,None,7)
-    f.text(657,558,602,32,'需求画像用于模型匹配；组件与参数需求用于蓝图',21,MUTED,'center')
+    f.text(657,558,602,32,'Request profiles guide matching; component and parameter needs guide blueprints',21,MUTED,'center')
     f.line([(938,812),(981,812)],PALETTES[2][2],2.5,True)
     f.footer()
     return f
 
 
 def swimlanes():
-    f=Figure('02_four_lanes','四行流程 · 全链路展开')
-    f.heading('方案 02 / 四行流程')
+    f=Figure('02_four_lanes','Four rows · End-to-end workflow')
+    f.heading('Design 02 / Four rows')
     rows=[
-        ('a','资料收集与\n建立知识库',[
-            ('多源资料汇集','文献、标签、PK 数据与模型','documents'),
-            ('规则与 LLM 抽取','实体、机制、参数与证据位置','extract'),
-            ('标准化与质量控制','身份归一、单位、去重与冲突','quality'),
-            ('图谱与检索索引','可溯源证据 + 模型目录','graph')]),
-        ('b','组件推荐',[
-            ('用户需求解析','药物、人群、给药与预测目标','query'),
-            ('多路检索与子图重排','关键词、语义与机制相关性','retrieval'),
-            ('机制与组件推断','吸收、分布、代谢与排泄','components'),
-            ('引用与约束校验','组件建议 + 结构化需求画像','quality')]),
-        ('c','模型推荐',[
-            ('候选模型召回','版本、结构与适用场景','model'),
-            ('生物学与工程约束','药物、途径、人群与模型机制','filter'),
-            ('需求匹配与排序','组件覆盖、任务匹配与证据','rank'),
-            ('用途判断与模型选择','可靠模型 → 复用 / 受控适配','decision')]),
-        ('d','蓝图设计',[
-            ('结构模板选择','无可靠复用模型时启动','blueprint'),
-            ('房室与过程实例化','器官、血流与 ADME 过程','organ'),
-            ('有来源参数绑定','量值、单位、证据与不确定性','parameters'),
-            ('校验、编译与导出','版本化蓝图 + 仿真方案','compile')]),
+        ('a','Data and\nknowledge base',[
+            ('Collect sources','Literature, labels, PK data, models','documents'),
+            ('Rule and LLM extraction','Entities, mechanisms, values, citations','extract'),
+            ('Normalize and check quality','Identity, units, duplicates, conflicts','quality'),
+            ('Graph and retrieval index','Traceable evidence + model catalog','graph')]),
+        ('b','Component recommendation',[
+            ('Parse user requirements','Drug, population, dosing, goals','query'),
+            ('Retrieve and rerank subgraphs','Keyword, semantic, mechanism relevance','retrieval'),
+            ('Infer mechanisms and components','Absorption, distribution, metabolism, excretion','components'),
+            ('Check citations and constraints','Components + structured request profile','quality')]),
+        ('c','Model recommendation',[
+            ('Retrieve candidates','Versions, structures, supported uses','model'),
+            ('Biological and engineering constraints','Drug, route, population, mechanisms','filter'),
+            ('Match and rank requests','Component coverage, task fit, evidence','rank'),
+            ('Assess use and select model','Reliable model → reuse / controlled adaptation','decision')]),
+        ('d','Blueprint design',[
+            ('Select a structural template','Start when reliable reuse is unavailable','blueprint'),
+            ('Instantiate compartments and processes','Organs, blood flow, ADME processes','organ'),
+            ('Bind sourced parameters','Values, units, evidence, uncertainty','parameters'),
+            ('Validate, compile, export','Versioned blueprint + simulation plan','compile')]),
     ]
     for i,(letter,title,steps) in enumerate(rows):
         y=179+i*211
@@ -371,11 +390,11 @@ def swimlanes():
 
 
 def hub():
-    f=Figure('03_central_framework','中心辐射 · 图形摘要')
-    f.heading('方案 03 / 中心辐射')
+    f=Figure('03_central_framework','Radial layout · Graphical abstract')
+    f.heading('Design 03 / Radial layout')
     # Clockwise order: a (upper left), b (upper right), c (lower right), d (lower left).
-    panels=[(48,181,0,'a','资料收集与建立知识库'),(992,181,1,'b','组件推荐'),
-            (992,617,2,'c','模型推荐'),(48,617,3,'d','蓝图设计')]
+    panels=[(48,181,0,'a','Data and knowledge base'),(992,181,1,'b','Component recommendation'),
+            (992,617,2,'c','Model recommendation'),(48,617,3,'d','Blueprint design')]
     for x,y,i,l,t in panels:
         if l=='c':
             pale,border,color=PALETTES[i]
@@ -389,21 +408,21 @@ def hub():
     # Keep the central motif in a white clearance zone; all content stays in wings.
     data=[
         (48,181,0,'documents','graph',[
-            ('多源资料','文献、标签、临床 PK、公开模型'),
-            ('抽取与质控','规则 + LLM；身份、单位与溯源'),
-            ('知识库构建','证据图谱、检索索引与模型目录')]),
+            ('Multiple sources','Literature, labels, clinical PK, public models'),
+            ('Extraction and quality checks','Rules + LLM; identity, units, provenance'),
+            ('Build the knowledge base','Evidence graph, search index, model catalog')]),
         (992,181,1,'retrieval','components',[
-            ('建模需求','药物、人群、给药与预测目标'),
-            ('检索与推断','多路检索、子图重排与机制推断'),
-            ('组件建议','ADME 组件、参数、引用与约束')]),
+            ('Modeling needs','Drug, population, dosing, prediction goals'),
+            ('Retrieve and infer','Multiple retrievers, reranking, mechanisms'),
+            ('Component recommendations','ADME components, values, citations, constraints')]),
         (992,617,2,'model','rank',[
-            ('候选与约束','模型版本、生物学与工程条件'),
-            ('匹配与排序','需求画像、组件覆盖与证据支持'),
-            ('模型选择','可靠候选 → 复用 / 受控适配')]),
+            ('Candidates and constraints','Model versions, biological and engineering limits'),
+            ('Match and rank','Request profile, coverage, evidence support'),
+            ('Select models','Reliable candidate → reuse / controlled adaptation')]),
         (48,617,3,'blueprint','parameters',[
-            ('结构设计','模板选择、房室与过程实例化'),
-            ('参数绑定','组件需求、量值、单位与来源'),
-            ('蓝图输出','守恒校验、编译与版本化导出')]),
+            ('Design the structure','Select templates, instantiate compartments and processes'),
+            ('Bind parameters','Component needs, values, units, sources'),
+            ('Export blueprint','Conservation checks, compilation, versioned export')]),
     ]
     for x,y,i,k1,k2,steps in data:
         pale,border,color=PALETTES[i]
@@ -426,19 +445,19 @@ def hub():
     f.line([(1749,574),(1749,607)],PALETTES[1][2],2.4,True)
     f.line([(982,916),(938,916)],PALETTES[2][2],2.4,True)
     f.rect(745,934,430,36,WHITE,None,7)
-    f.text(756,938,410,30,'无可靠复用模型 → 蓝图设计',21,PALETTES[2][2],'center')
+    f.text(756,938,410,30,'No reliable reusable model → blueprint design',21,PALETTES[2][2],'center')
     # Native organ diagram serves as the common scientific object, not a bitmap.
     f.ellipse(750,386,420,420,WHITE,'#D8E1E6',2.1)
     f.ellipse(771,407,378,378,'#FAFCFD','#E5EBEF',1.2)
     f.text(811,429,298,48,'PBPK',34,INK,'center',True)
     icon(f,'organ',875,489,170,'#7395A3')
-    f.text(796,689,328,37,'证据驱动建模',25,INK,'center',True)
-    f.text(796,733,328,30,'机制 · 结构 · 参数',20,MUTED,'center')
+    f.text(796,689,328,37,'Evidence-driven modeling',25,INK,'center',True)
+    f.text(796,733,328,30,'Mechanisms · structure · parameters',20,MUTED,'center')
     # These labels describe the cross-module payloads without dense crossing lines.
     f.rect(563,569,282,37,WHITE,None,5)
-    f.text(570,573,268,30,'证据 / 模型 / 模板',20,MUTED,'center')
+    f.text(570,573,268,30,'Evidence / models / templates',20,MUTED,'center')
     f.rect(1175,569,302,37,WHITE,None,5)
-    f.text(1182,573,288,30,'组件建议 → 需求画像',20,MUTED,'center')
+    f.text(1182,573,288,30,'Components → request profile',20,MUTED,'center')
     f.footer()
     return f
 
@@ -501,16 +520,16 @@ def export_ppt_slide(prs, figure):
         else:raise ValueError(item.kind)
         sh.name=a['name']+(('/'+a['value'].replace('\n',' ')[:44]) if item.kind=='text' else '')
     slide.notes_slide.notes_text_frame.text=(
-        '预期完整研究框架的设计稿，不表示当前完成状态或实验结果。'
-        '所有文字、图形、器官示意、框线、箭头均由 PowerPoint 原生可编辑对象组成，无栅格底图。'
-        '模型选择区分复用、受控适配与拒绝；无可靠复用模型时进入蓝图设计。'
-        '蓝图经仿真、校准与独立验证，不预设科学验证通过。'
-        '参考用户附件的配色与科研排版；图像生成结果只用于设计探索。')
+        'Draft of the intended complete research framework; it does not describe current completion or experimental results.'
+        'All text, shapes, organ diagrams, borders, and arrows are native editable PowerPoint objects; no raster background is used.'
+        'Model selection distinguishes reuse, controlled adaptation, and rejection; blueprint design follows when reliable reuse is unavailable.'
+        'Blueprints require simulation, calibration, and independent validation; scientific validation is not assumed.'
+        'Colors and scientific layout follow the user attachment; generated images were used only for design exploration.')
 
 
 def export_images(f):
     root=ET.Element('{'+SVG_NS+'}svg',{'viewBox':f'0 0 {W} {H}','width':str(W),'height':str(H),'role':'img'})
-    ET.SubElement(root,'{'+SVG_NS+'}title').text=f.title+' — PBPK 预期完整研究框架'
+    ET.SubElement(root,'{'+SVG_NS+'}title').text=f.title+' — Intended complete PBPK research framework'
     im=Image.new('RGB',(W*SCALE,H*SCALE),WHITE)
     draw=ImageDraw.Draw(im)
     def el(tag,attrs):return ET.SubElement(root,'{'+SVG_NS+'}'+tag,{k:str(v) for k,v in attrs.items()})
@@ -584,8 +603,8 @@ def main():
     figures=[quadrants(),swimlanes(),hub()]
     prs=Presentation()
     prs.slide_width=Inches(16);prs.slide_height=Inches(9)
-    prs.core_properties.title='PBPK 建模推荐框架：三个可编辑设计方案'
-    prs.core_properties.subject='资料与知识库、组件推荐、模型推荐、蓝图设计'
+    prs.core_properties.title='PBPK modeling recommendation: three editable designs'
+    prs.core_properties.subject='Data and knowledge base, component recommendation, model recommendation, blueprint design'
     prs.core_properties.author='PBPK research project'
     for fig in figures:
         export_images(fig)

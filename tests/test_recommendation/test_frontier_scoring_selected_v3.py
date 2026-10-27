@@ -7,6 +7,8 @@ import sys
 
 import pytest
 
+from frozen_frontier_sources import historical_sha
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 v = importlib.import_module("run_frontier_scoring_selected_v3")
 
@@ -217,7 +219,7 @@ def test_review_additionally_binds_parent_and_real_selected_roles(paths, monkeyp
 
 
 def test_frozen_parent_code_and_amendment_remain_original():
-    assert v.base.file_sha(v.ROOT / "scripts/run_frontier_scoring_v3.py") == "f389c9093640325320f5ed7306fd0151f87f88506878bbb5dda1e45d909cc2f2"
+    assert historical_sha("run_frontier_scoring_v3.py") == "f389c9093640325320f5ed7306fd0151f87f88506878bbb5dda1e45d909cc2f2"
     assert v.verify_amendment()["execution_policy"]["ranking_scores_used_in_judge_selection"] is False
 
 
@@ -341,4 +343,4 @@ def test_secondary_summary_reports_own_denominator(paths):
     put(run / "status.json", {"judge": "secondary", "committed_pairs": 10771, "expected_pairs": 10771})
     v.publish_summary()
     text = (folder / "README.md").read_text()
-    assert "5% 复判已提交：10,771/10,771" in text and "10,771/216,160" not in text
+    assert "5% repeat judgment — committed: 10,771/10,771" in text and "10,771/216,160" not in text

@@ -556,25 +556,25 @@ def followup_status():
     """Display the registered project guardian without enumerating processes."""
     path = DEPLOY / "followup/status.json"
     if not path.exists():
-        return "未启用"
+        return 'Disabled'
     try:
         saved = read(path)
         expected = saved.get("guardian") or {}
         actual = process_identity(int(expected["pid"]), ROOT / "scripts/deployment/follow_evidence_expansion.py")
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(saved["checked_at"])).total_seconds()
         if not same_identity(expected, actual) or actual["state"] in {"T", "t", "Z"} or age > 180:
-            return "跟进进程未活动或状态过期"
-        label = {"monitoring": "跟进中", "tracking": "跟进中", "needs_attention": "需要处理",
-                 "completed": "已完成", "restarting_controller": "重接监督器"}.get(saved.get("status"), saved.get("status", "未知"))
+            return 'Follow-up process inactive or stale'
+        label = {"monitoring": 'Following up', "tracking": 'Following up', "needs_attention": 'Action required',
+                 "completed": 'Completed', "restarting_controller": 'Reconnect supervisor'}.get(saved.get("status"), saved.get("status", 'Unknown'))
         reason = saved.get("reason")
         return label + (" · " + str(reason) if saved.get("status") == "needs_attention" and reason else "")
     except (OSError, ValueError, KeyError, TypeError, RuntimeError):
-        return "跟进进程未运行或身份核验失败"
+        return 'Follow-up process absent or identity verification failed'
 
 
 def status():
     if not STATE.exists():
-        print("扩库尚未启动")
+        print('Expansion has not started')
         return
     state = read(STATE)
     complete = len(state["batches"])
@@ -583,42 +583,42 @@ def status():
     live = controller_health(state)
     current_status = state["status"]
     if current_status == "running" and not live:
-        current_status = "controller_not_active（状态文件保留上次进度）"
-    print(f"知识库扩充  [{bar}] {complete}/7批  已验证覆盖 {db['covered_compounds']}/100药物  {current_status}")
-    print(f"监督器 {'运行中' if live else '未运行/身份未通过核验'}  最后更新 {state.get('updated_at', 'unknown')}")
-    print("后台跟进：" + followup_status())
+        current_status = 'controller_not_active (state file retains previous progress)'
+    print(f"Knowledge-base expansion [{bar}] {complete}/7 batches | Verified coverage {db['covered_compounds']}/100 drugs | {current_status}")
+    print(f"Supervisor {'Running' if live else 'Absent or unverified'} | Last updated {state.get('updated_at', 'unknown')}")
+    print('Background follow-up: ' + followup_status())
     batch = state.get("current_batch")
     if batch:
         path = ROOT / f"data_process/pipeline_runs/{batch['run_id']}.json"
         manifest = read(path) if path.exists() else {}
         stages = sum(s.get("accepted") is True for s in manifest.get("stages", {}).values())
-        print(f"当前 {batch['batch_id']}  阶段 {stages}/18  {manifest.get('current_stage', 'starting')}")
-        print("药物：" + ", ".join(batch["compounds"]))
+        print(f"Current {batch['batch_id']} | Stage {stages}/18 | {manifest.get('current_stage', 'starting')}")
+        print('Drugs: ' + ", ".join(batch["compounds"]))
         monitor_path = ROOT / f"runtime/deployment/evidence_monitor/{batch['run_id']}/status.json"
         if monitor_path.exists():
             mon = read(monitor_path)
             snap = mon.get("snapshot", {})
-            print(f"监控 {mon['status']}  文件 {snap.get('files', 0)}  数据 {snap.get('batch_bytes', 0)/1024**2:.1f} MiB")
-            print(f"监控最近检查 {mon.get('checked_at', 'unknown')}")
+            print(f"Monitor {mon['status']} | Files {snap.get('files', 0)} | Data {snap.get('batch_bytes', 0)/1024**2:.1f} MiB")
+            print(f"Monitor last checked {mon.get('checked_at', 'unknown')}")
             if mon.get("reasons"):
-                print("监控原因：" + ", ".join(mon["reasons"]))
+                print('Monitor reason: ' + ", ".join(mon["reasons"]))
         if batch.get("log"):
-            print("日志：" + str(ROOT / batch["log"]))
+            print('Log: ' + str(ROOT / batch["log"]))
     if state.get("error"):
-        print("停止原因：" + state["error"])
+        print('Stop reason: ' + state["error"])
 
 
 STAGE_LABELS = {
-    "raw_acquisition": "资料采集", "raw_finalization": "资料补全",
-    "pmc_static_transfer": "PMC全文传输", "raw_reconciliation": "原始资料验收",
-    "raw_inventory": "资料清点", "parse": "文件解析",
-    "deterministic_extract": "规则抽取", "llm_extract": "Qwen证据抽取",
-    "table_recovery": "表格恢复", "completeness": "完整性核验",
-    "provenance_attribution": "证据归属", "domain_and_deterministic_dedup": "领域过滤与去重",
-    "semantic_dedup": "语义去重", "conflict_and_evidence_layers": "冲突检查与分层",
-    "rag_index": "检索索引", "deterministic_quality_control": "规则质控",
-    "llm_quality_validation": "Qwen质量核验", "database_import": "证据入库",
-    "completed": "等待检索验收", "starting": "准备启动",
+    "raw_acquisition": 'Acquisition', "raw_finalization": 'Source completion',
+    "pmc_static_transfer": 'PMC full-text transfer', "raw_reconciliation": 'Raw-source verification',
+    "raw_inventory": 'Source inventory', "parse": 'File parsing',
+    "deterministic_extract": 'Rule extraction', "llm_extract": 'Qwen evidence extraction',
+    "table_recovery": 'Table recovery', "completeness": 'Completeness verification',
+    "provenance_attribution": 'Evidence attribution', "domain_and_deterministic_dedup": 'Domain filtering and deduplication',
+    "semantic_dedup": 'Semantic deduplication', "conflict_and_evidence_layers": 'Conflict checks and layering',
+    "rag_index": 'Retrieval index', "deterministic_quality_control": 'Rule quality control',
+    "llm_quality_validation": 'Qwen quality validation', "database_import": 'Evidence import',
+    "completed": 'Waiting for retrieval verification', "starting": 'Preparing startup',
 }
 
 
@@ -664,7 +664,7 @@ def progress_snapshot(meter):
     stage = manifest.get("current_stage") or "starting"
     steps = sum(s.get("accepted") is True for s in manifest.get("stages", {}).values())
     monitor = small(ROOT / f"runtime/deployment/evidence_monitor/{batch.get('run_id', '_')}/status.json")
-    detail = ("阶段活动", 0, None, "暂无固定分母")
+    detail = ('Stage active', 0, None, 'No fixed denominator yet')
     if batch:
         raw = ROOT / f"artifacts/pbpk_raw_runs/compound_runs/{batch['run_id']}"
         meter.update(raw / "requests.jsonl")
@@ -673,25 +673,25 @@ def progress_snapshot(meter):
             targets = {s.casefold() for s in batch["compounds"]}
             done = {str(small(p).get("compound", "")).casefold()
                     for p in (raw / "finalization/pmc").glob("*.json")}
-            detail = ("补全收尾", len(done & targets), len(targets), "药物 · 补全尝试已结束")
+            detail = ('Completing finalization', len(done & targets), len(targets), 'drugs; completion attempts finished')
         elif stage == "parse":
             progress = small(processing / "parse_progress.json")
-            detail = ("文件解析", progress.get("processed_raw_asset_count", 0),
-                      progress.get("expected_raw_asset_count") or None, "份资料")
+            detail = ('File parsing', progress.get("processed_raw_asset_count", 0),
+                      progress.get("expected_raw_asset_count") or None, 'sources')
         elif stage == "llm_extract":
             progress = small(processing / "llm_extract_progress.json")
             classification = small(processing / "llm_classification_summary.json")
             total = classification.get("classify_unique_input_count") or None
             if total and batch.get("status") == "running_pilot":
                 total = min(10, total)
-            detail = ("本轮抽取", progress.get("api_requests_completed", 0), total,
-                      f"请求 · 候选 {progress.get('evidence_added', 0)} · 未解决错误 {progress.get('unresolved_api_failures', 0)}")
+            detail = ('Current extraction', progress.get("api_requests_completed", 0), total,
+                      f"requests | Candidates {progress.get('evidence_added', 0)} | Unresolved errors {progress.get('unresolved_api_failures', 0)}")
     live = controller_health(state)
     stopped = (state.get("status") == "stopped_for_review"
                or monitor.get("status") in {"paused_by_monitor", "target_paused"})
     finished = state.get("status") in {"completed", "completed_with_coverage_gaps"}
-    label = ("已完成（有覆盖缺口）" if state.get("status") == "completed_with_coverage_gaps"
-             else "已完成" if finished else "已暂停" if stopped else "运行中" if live else "监督器未运行")
+    label = ('Completed with coverage gaps' if state.get("status") == "completed_with_coverage_gaps"
+             else 'Completed' if finished else 'Paused' if stopped else 'Running' if live else 'Supervisor absent')
     elapsed = max(0, (datetime.now(timezone.utc) - datetime.fromisoformat(state["started_at"])).total_seconds())
     return {"state": state, "batch": batch, "stage": stage, "stage_name": STAGE_LABELS.get(stage, stage),
             "steps": steps if batch else (18 if finished else 0),
@@ -709,23 +709,23 @@ def watch_progress():
     meter = DownloadMeter()
     view = progress_snapshot(meter)
     if view is None:
-        print("扩库尚未启动")
+        print('Expansion has not started')
         return
     terminal = sys.stdout.isatty()
-    print("\n  PBPK  药物证据扩库  |  30 → 100 种药物")
-    print("  按已验收阶段计数；各阶段耗时不同。Ctrl+C 仅退出查看。\n")
+    print('\n  PBPK drug-evidence expansion | 30 to 100 drugs')
+    print('  Counts verified stages; stage durations differ. Ctrl+C exits this display only.\n')
     counted = "{desc}: {percentage:6.2f}%|{bar}| {n_fmt}/{total_fmt}{postfix}"
     activity = "{desc}"
     bars = [tqdm(total=total, initial=0, desc=label, position=i, file=sys.stdout,
                  dynamic_ncols=True, mininterval=0, colour=color if terminal else None,
                  bar_format=counted if total else activity, disable=not terminal, leave=False)
             for i, (label, total, color) in enumerate([
-                ("总体验收", view["total_batches"] * 18, "#38bdf8"),
-                ("当前批次", 18, "#2dd4bf"),
-                ("证据覆盖", view["target"], "#a78bfa"),
-                ("当前环节", None, "#fbbf24"),
-                ("采集活动", None, None),
-                ("运行状态", None, None),
+                ('Overall verification', view["total_batches"] * 18, "#38bdf8"),
+                ('Current batch', 18, "#2dd4bf"),
+                ('Evidence coverage', view["target"], "#a78bfa"),
+                ('Current stage', None, "#fbbf24"),
+                ('Acquisition activity', None, None),
+                ('Run status', None, None),
             ])]
     previous = None
     frame = 0
@@ -733,30 +733,30 @@ def watch_progress():
     try:
         while view is not None:
             instant = time.monotonic()
-            rates = "统计中"
+            rates = 'Measuring'
             run = view["batch"].get("run_id")
             if previous and previous[0] == run:
-                rates = f"{max(0, meter.successes-previous[1])/max(.01, instant-previous[2]):.1f} 次/s"
+                rates = f"{max(0, meter.successes-previous[1])/max(.01, instant-previous[2]):.1f} calls/s"
             previous = (run, meter.successes, instant)
             snap = view["monitor"].get("snapshot", {})
             reasons = view["monitor"].get("reasons") or []
             detail_name, done, total, note = view["detail"]
             mark = "■" if view["stopped"] or view["finished"] else spinner[frame % len(spinner)]
             rows = [
-                ("总体验收", view["total_steps"], view["total_batches"]*18,
-                 f"已完成 {view['completed_batches']}/{view['total_batches']} 批"),
-                ("当前批次", view["steps"], 18,
-                 f"第 {view['completed_batches']+1 if view['batch'] else view['completed_batches']}/{view['total_batches']} 批 · "
-                 + ("全部批次验收结束" if view['finished'] else view['stage_name'])),
-                ("证据覆盖", view["covered"], view["target"], "种药物 · 入库验收后更新"),
+                ('Overall verification', view["total_steps"], view["total_batches"]*18,
+                 f"Completed {view['completed_batches']}/{view['total_batches']} batches"),
+                ('Current batch', view["steps"], 18,
+                 f"Batch {view['completed_batches']+1 if view['batch'] else view['completed_batches']}/{view['total_batches']} | "
+                 + ('All batches verified' if view['finished'] else view['stage_name'])),
+                ('Evidence coverage', view["covered"], view["target"], 'drugs; updated after import verification'),
                 (detail_name, done, total, note if total else f"{mark} {view['stage_name']} · {note}"),
-                ("采集活动", 0, None,
-                 f"成功 {meter.successes:,} 次 · {rates} · {snap.get('batch_bytes', 0)/1024**2:.1f} MiB · {snap.get('files', 0):,} 文件"),
-                ("运行状态", 0, None,
-                 f"{mark} {view['label']} · 已运行 {view['elapsed']} · 来源空缺 {view['monitor'].get('verified_source_gap_count', 0)} · "
-                 + ("异常 " + ", ".join(reasons) if reasons else "监控正常" if view['monitor'].get('status') == 'monitoring' else f"监控 {view['monitor'].get('status', '待连接')}")
+                ('Acquisition activity', 0, None,
+                 f"Succeeded {meter.successes:,} calls | {rates} | {snap.get('batch_bytes', 0)/1024**2:.1f} MiB | {snap.get('files', 0):,} files"),
+                ('Run status', 0, None,
+                 f"{mark} {view['label']} | Elapsed {view['elapsed']} | Source gaps {view['monitor'].get('verified_source_gap_count', 0)} | "
+                 + ('Anomaly ' + ", ".join(reasons) if reasons else 'Monitor healthy' if view['monitor'].get('status') == 'monitoring' else f"Monitor {view['monitor'].get('status', 'Connecting')}")
                  + (f" · {view['state']['error']}" if view['state'].get('error') else "")
-                 + " · 后台" + followup_status()),
+                 + ' | Background: ' + followup_status()),
             ]
             for bar, (label, n, total, postfix) in zip(bars, rows):
                 bar.desc = label if total else label + "  " + postfix
@@ -779,7 +779,7 @@ def watch_progress():
     finally:
         for bar in reversed(bars):
             bar.close()
-        print("\n已退出进度查看；后台采集与处理不受影响。")
+        print('\nProgress display closed; background collection and processing are unaffected.')
 
 
 def main():

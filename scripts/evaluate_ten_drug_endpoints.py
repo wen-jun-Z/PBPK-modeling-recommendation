@@ -313,46 +313,46 @@ def make_reports(output, protocol, rows):
 
 
 def render_readme(output, summary, protocol, wide, comparison_rows):
-    chinese = {'caffeine': '咖啡因', 'midazolam': '咪达唑仑', 'fluconazole': '氟康唑',
-               'alfentanil': '阿芬太尼', 'alprazolam': '阿普唑仑', 'sufentanil': '舒芬太尼',
-               'moxifloxacin': '莫西沙星', 'amikacin': '阿米卡星', 'vancomycin': '万古霉素', 'furosemide': '呋塞米'}
-    ep_names = dict(zip(ENDPOINTS, ['浓度曲线', 'AUC', 'Cmax', 'Tmax', '末次浓度', '半衰期', 'AUC∞', 'CL', 'Vz', 'MRT', 'Vss']))
-    lines = ['# 十药、多剂量与多条件终点评测', '',
-        f"已运行 **10 种药物、{summary['case_count']} 个场景**：{summary['clinical_cases']} 个临床研究场景，90 个假设预测场景。",
-        f"成功预测 {summary['predicted_cases']}/{summary['case_count']}；原生求解共 {summary['native_attempts']} 次（包括延长模拟）。", '',
-        '**本轮评估当前算法，没有调参。** 人体基础 PBPK＋药物证据构建；阿芬太尼沿用上轮已选定的 Rodgers–Rowland，其余使用 PK-Sim Standard。没有用完整同药拟合模型作为输入。', '',
-        '**预测覆盖率不等于准确率。** 没有匹配观测或参考不合格时，误差留空；不把其他剂量/人群的观测复制过来。临床案例为历史开发资料，不能称为新药独立盲测。', '',
-        '## 下载结果', '',
-        '- [每场景全部预测值](predictions.csv)：每行一个场景，10 个数值终点及完整曲线路径。',
-        '- [逐终点评测](endpoint_evaluation.csv)：预测值、匹配观测时点的预测值、观测值、误差、单位与空值原因。',
-        '- [临床曲线比较](clinical_comparison.csv)：只包含通过资料检查且可评分的研究场景。',
-        '- [完整结果](summary.json) · [冻结协议与来源校验](protocol.json) · [预测锁定记录](predictions_lock.json)', '',
-        '## 场景与曲线结果', '',
-        '每药额外运行：参考剂量的 0.5、1、2 倍，分别组合参考男性、延长输注的男性、参考女性。男性为30岁/70kg/175cm，女性为30岁/60kg/165cm；这些是声明的模拟条件，不是实测人群或用药建议。单次IV给药，网格场景有限窗口为0–24h。', '',
-        '曲线误差只汇总另研究比较，不混入推导输入参数的研究；同研究剂量臂先平均，再按研究、药物汇总。', '',
-        '| 药物 | 总场景 | 临床场景 | 可评分曲线 | 另研究曲线 GMFE ↓ |',
+    chinese = {'caffeine': 'Caffeine', 'midazolam': 'Midazolam', 'fluconazole': 'Fluconazole',
+               'alfentanil': 'Alfentanil', 'alprazolam': 'Alprazolam', 'sufentanil': 'Sufentanil',
+               'moxifloxacin': 'Moxifloxacin', 'amikacin': 'Amikacin', 'vancomycin': 'Vancomycin', 'furosemide': 'Furosemide'}
+    ep_names = dict(zip(ENDPOINTS, ['Concentration curve', 'AUC', 'Cmax', 'Tmax', 'Last concentration', 'Half-life', 'AUC∞', 'CL', 'Vz', 'MRT', 'Vss']))
+    lines = ['# Ten-drug endpoint evaluation across doses and conditions', '',
+        f"Executed **ten drugs, {summary['case_count']} scenarios**: {summary['clinical_cases']} clinical-study scenarios and 90 hypothetical prediction scenarios.",
+        f"Successful predictions: {summary['predicted_cases']}/{summary['case_count']}; {summary['native_attempts']} native solves, including extended horizons.", '',
+        '**This batch evaluates the current algorithm without tuning.** Construction uses a human PBPK template plus drug evidence. Alfentanil retains the previously selected Rodgers–Rowland formula; others use PK-Sim Standard. Complete fitted same-drug models are not inputs.', '',
+        '**Prediction coverage is not accuracy.** Errors remain empty without matching observations or qualified references; observations from other doses or populations are not copied. These clinical cases are historical development data, not independent blinded new-drug validation.', '',
+        '## Downloads', '',
+        '- [All scenario predictions](predictions.csv): one scenario per row, ten scalar endpoints, and the complete curve path.',
+        '- [Endpoint evaluation](endpoint_evaluation.csv): predictions, predictions at matched observation times, observations, errors, units, and missing-value reasons.',
+        '- [Clinical curve comparison](clinical_comparison.csv): only qualified, scorable study scenarios.',
+        '- [Full results](summary.json) · [Frozen protocol and source checks](protocol.json) · [Prediction lock](predictions_lock.json)', '',
+        '## Scenarios and curve results', '',
+        'For each drug, 0.5x, 1x, and 2x reference doses are combined with a reference male, a male with longer infusion, and a reference female. Male conditions are 30 years/70 kg/175 cm; female conditions are 30 years/60 kg/165 cm. These are declared simulation settings, not observed populations or dosing advice. Single IV dosing is used with a 0–24 h finite window for grid scenarios.', '',
+        'Curve errors summarize comparisons against other studies, excluding studies used to derive input parameters. Dose arms are averaged within study before aggregation by study and drug.', '',
+        '| Drug | All scenarios | Clinical scenarios | Scorable curves | Other-study curve GMFE (lower is better) |',
         '|---|---:|---:|---:|---:|']
     by_drug = summary['stratified_metrics'].get('separate_study_development_comparison', {}).get('metrics', {}).get('gmfe', {}).get('by_compound', {})
     for drug in DRUGS:
         cases = [c for c in protocol['cases'] if c['drug'] == drug]
         val = by_drug.get(cases[0]['compound_id'])
         lines.append(f"| {chinese[drug]} | {len(cases)} | {sum(c['observations_path'] is not None for c in cases)} | {sum(c['drug']==drug for c in comparison_rows)} | {f'{val:.3f}' if val else ''} |")
-    lines += ['', '## 11 类终点覆盖', '', '| 终点 | 有预测值/场景数 | 有误差/场景数 |', '|---|---:|---:|']
+    lines += ['', '## Coverage of 11 endpoint types', '', '| Endpoint | Predicted/scenarios | Scored/scenarios |', '|---|---:|---:|']
     for ep, counts in summary['endpoint_coverage'].items():
         lines.append(f"| {ep_names[ep]} | {counts['predicted']}/{counts['requested']} | {counts['evaluated']}/{counts['requested']} |")
-    lines += ['', '## 如何看空值和误差', '',
-        '- 曲线本身保存在每场景的 `predicted_curve.csv`，不压成一个预测数字。',
-        '- AUC、Cmax、Tmax、末次浓度的主预测对应请求窗口；临床误差使用相同观测时点和观测窗口。两列含义不同，不能互换。采样峰值不等于真实连续峰值。',
-        '- 半衰期及AUC∞/CL/Vz/MRT/Vss使用长轨迹计算；临床稀疏曲线不能可靠提供这些参考时，误差空白。有核实的独立论文终点时，单独标注来源和比较定义。',
-        '- 末次浓度是有限窗口末端浓度；不代表稳态谷浓度。Vz/Vss是表观分布容积。',
-        '- 终末计算不放宽门槛：拟合调整R²≥0.98、跨度≥1个半衰期，AUC/AUMC外推比例≤20%。模型时域至多168h。仍不满足时，预测也会标明无法可靠估计，不伪造数值。',
-        '- 保留每次模拟、失败记录和来源假设。历史资料曾用于开发；各药证据质量和人群匹配程度不同。没有用这些结果证明SOTA或临床可用。', '',
-        '## 运行与进度', '', '在项目根目录执行：', '', '```bash',
+    lines += ['', '## Interpreting missing values and errors', '',
+        '- The actual curve remains in each scenario predicted_curve.csv; it is not reduced to one prediction number.',
+        '- Primary AUC, Cmax, Tmax, and last-concentration predictions use the requested window. Clinical errors use matching observation times and windows. These columns are not interchangeable; a sampled peak is not the true continuous peak.',
+        '- Half-life, AUC infinity, CL, Vz, MRT, and Vss use long trajectories. Errors remain empty when sparse clinical data cannot provide reliable references. Verified independent publication endpoints retain separate sources and comparison definitions.',
+        '- Last concentration is the finite-window endpoint, not steady-state trough. Vz and Vss are apparent distribution volumes.',
+        '- Terminal criteria are not relaxed: adjusted fit R-squared >=0.98, span >=one half-life, and AUC/AUMC extrapolation <=20%. The model horizon is at most 168 h. If criteria still fail, the prediction is marked unreliable rather than filled with invented values.',
+        '- Every simulation, failure, and source assumption remains. Historical data were used during development; evidence quality and population matching differ by drug. These results do not establish SOTA or clinical readiness.', '',
+        '## Execution and progress', '', 'Run from the project root:', '', '```bash',
         'runtime/app-env/bin/python -B scripts/evaluate_ten_drug_endpoints.py --workers 6',
-        '# 相同代码和输入中断后继续：',
+        '# Resume after interruption with unchanged code and inputs:',
         'runtime/app-env/bin/python -B scripts/evaluate_ten_drug_endpoints.py --workers 6 --resume',
         './scripts/progress.sh', '```', '',
-        '原生求解使用CPU CVODES，每场景2线程，最多6场景并行；不是GPU神经网络训练。未启动旧实验队列或网页服务。']
+        'Native solving uses CPU CVODES, two threads per scenario and at most six parallel scenarios, not GPU neural-network training. Old queues and web services are not started.']
     (output / 'README.md').write_text('\n'.join(lines) + '\n')
 
 

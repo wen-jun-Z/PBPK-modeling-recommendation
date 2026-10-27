@@ -6,6 +6,8 @@ Run with runtime/app-env/bin/python scripts/build_paper_results.py.
 """
 from __future__ import annotations
 
+# Unicode escapes preserve historical source filenames and field names.
+
 import argparse
 import csv
 import hashlib
@@ -381,7 +383,7 @@ def figure_audit(fig):
                              or [WORKFLOW_THEMES[fig._pbpk_theme]["panel"]]),
             "score_colors": ((condition_palettes or {}).get("sentence_reordering")
                              or WORKFLOW_THEMES[fig._pbpk_theme].get("scores")),
-            "palette_reference": "results/figures/workflow/流程图.png"}
+            "palette_reference": 'results/figures/workflow/\u6d41\u7a0b\u56fe.png'}
     if condition_palettes:
         audit["score_colors_by_condition"] = condition_palettes
     return audit

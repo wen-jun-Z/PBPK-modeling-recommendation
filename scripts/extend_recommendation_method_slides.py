@@ -103,7 +103,7 @@ def previews(pdf,work):
             all_images.append(Image.frombytes('RGB',(pix.width,pix.height),pix.samples))
         overview=Image.new('RGB',(1490,50+10*291),'#E7ECEF')
         draw=ImageDraw.Draw(overview)
-        for section,title in enumerate(['组件推荐 · 01—10','模型推荐 · 11—20','蓝图设计 · 21—30']):
+        for section,title in enumerate(['Component recommendation · 01—10','Model recommendation · 11—20','Blueprint design · 21—30']):
             draw.text((20+section*490,12),title,font=title_font,fill='#255E72')
             contact=Image.new('RGB',(1480,2160),'#E7ECEF')
             cd=ImageDraw.Draw(contact)
@@ -116,7 +116,7 @@ def previews(pdf,work):
                 x=10+(local%2)*740;y=10+(local//2)*430
                 contact.paste(larger,(x,y));cd.text((x+8,y+407),f'{index+1:02d}',font=font,fill='#255E72')
             contact.save(work/f'preview_section_{section+1}.png')
-        overview.save(work/(STEM+'_预览.png'))
+        overview.save(work/(STEM+'_preview.png'))
 
 
 def main():
@@ -128,11 +128,11 @@ def main():
     assert len(slides)==20
     for i,slide in enumerate(slides):
         slide.text(855,503,63,f'{i+1:02d} / 30',10,style.TEAL,align='right')
-        slide.notes+=' 图形用于解释方法；有数字的结果页来自备注所列工件。其余节点、权重和流程均为原理示意。'
+        slide.notes+=' Graphics explain the methods. Numerical results come from artifacts listed in the notes; other nodes, weights, and workflows are illustrative.'
     style.render(slides,output_dir=WORK,stem=STEM,source_pptx=base_ppt,source_pdf=base_pdf,
-        title='PBPK组件推荐、模型推荐与蓝图设计：原理与流程',
-        subject='需求与证据图匹配、PBPK-Match、固定人体模板下的蓝图构建',
-        required_terms=['组件推荐','Qwen3-Embedding','204','716','280','0.909','人体','RF','校准'])
+        title='PBPK component recommendation, model recommendation, and blueprint design: principles and workflow',
+        subject='Request–evidence graph matching, PBPK-Match, and blueprint construction with fixed physiology',
+        required_terms=['Component recommendation','Qwen3-Embedding','204','716','280','0.909','Human','RF','Calibration'])
     new_ppt,new_pdf=WORK/(STEM+'.pptx'),WORK/(STEM+'.pdf')
     validate(base_ppt,base_pdf,new_ppt,new_pdf)
     previews(new_pdf,WORK)
@@ -146,7 +146,7 @@ def main():
     # Publish only after structural, source-preservation and rendered-page checks.
     if pptx_path.read_bytes()!=pptx_data or pdf_path.read_bytes()!=pdf_data:
         raise RuntimeError('Presentation changed during build; do not overwrite concurrent edits')
-    for suffix in ['.pptx','.pdf','_预览.png']:
+    for suffix in ['.pptx','.pdf','_preview.png']:
         src=WORK/(STEM+suffix);dst=OUT/(STEM+suffix)
         with tempfile.NamedTemporaryFile(dir=OUT,prefix='.presentation-',delete=False) as f:
             temp=Path(f.name);f.write(src.read_bytes())

@@ -265,15 +265,15 @@ def report():
         prediction_lock=s['predictions_locked_at'],endpoint_rows=len(rows),endpoints=ref(RUN/'endpoints.csv'),repaired_scores=repaired,
         counts=dict(drugs=len(p['cases']),layouts=len(p['designs']),checked_units=len(s['units']),refitted_units=len(repaired)),limitations=p['limitations'])
     save(RUN/'results.json',result);s.update(status='complete',results=ref(RUN/'results.json'),completed_at=time.time());save(RUN/'state.json',s)
-    lines=['# 30药选点稳定性与拟合范围修复','',
-        '本轮沿用30药，作为已查看资料上的开发迭代。统一原10药的特征和标签口径；新增20药的结果不训练评分器。原10药按研究整组留出，再在训练内做留一研究稳定性检查。',
-        '只在全部留一研究模型都支持时偏离时间规则；质量守恒证明可见数据不可能被旧RBC范围拟合时，扩展未实测RBC下界。选点先固定、再修复所选数据的拟合，分别报告两项改动收益。',
-        '', '| 范围 | 方法 | Cmax GMFE | 曲线GMFE |','|---|---|---:|---:|']
+    lines=['# Thirty-drug selection stability and fitting-bound repair','',
+        'This reuses 30 drugs as development iteration on inspected data. Feature and label definitions are aligned for the original ten; additional-20 outcomes do not train the scorer. Original drugs use study-group holdout, followed by leave-one-study-out stability checks within training.',
+        'Deviate from time coverage only when all leave-one-study-out models agree. Expand the unmeasured RBC lower bound only when mass balance proves that visible observations cannot be fitted within old bounds. Selection is fixed first, then fitting is repaired for the selected data; benefits of the two changes are reported separately.',
+        '', '| Scope | Method | Cmax GMFE | Curve GMFE |','|---|---|---:|---:|']
     for scope in ('added_twenty','all_thirty'):
         for method in METHODS:
             v=summary[scope][method];lines.append(f"| {scope} | {method} | {v['cmax']['estimate']:.4f} | {v['curve']['estimate']:.4f} |")
-    lines+=['','[全部11类输出](endpoints.csv) · [结果与逐药配对](results.json) · [冻结协议](protocol.json)',
-        '', '原有论文和本轮之前的结果保留。AUC∞/CL/Vz/MRT/Vss统一临床参考仍缺失，不能声称11类均已验证。浮点比较采用1e-10相对容差，避免把数值噪声算成退步。']
+    lines+=['','[All 11 outputs](endpoints.csv) · [Results and per-drug pairs](results.json) · [Frozen protocol](protocol.json)',
+        '', 'The existing manuscript and earlier results remain. Common clinical references for AUC infinity/CL/Vz/MRT/Vss are still absent; validation of all 11 types is not claimed. Floating-point comparisons use relative tolerance 1e-10 to avoid counting numerical noise as deterioration.']
     (RUN/'README.md').write_text('\n'.join(lines)+'\n');return status()
 
 

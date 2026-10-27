@@ -432,26 +432,26 @@ def report():
     save(RUN/'results.json',result)
     with (RUN/'results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
-    lines=['# 血细胞分配校准：十药结构改进验证','',
-        '全部十药均为已查看的开发资料。完整与五点分别拟合，全部预测锁定后才评分。未替换论文。','',
+    lines=['# Blood-cell partition calibration: ten-drug structural evaluation','',
+        'All ten drugs are previously inspected development data. Full and five-point curves are fitted separately; scoring starts only after every prediction is locked. The manuscript is not replaced.','',
         '| Method | Full GMFE | Five-point GMFE |','|---|---:|---:|']
     for m in ALL_METHODS:
         values=[summary[s][m]['estimate'] for s in base.SAMPLINGS]
         a,b=['—' if value is None else f'{value:.4f}' for value in values]
         lines.append(f'| {m} | {a} | {b} |')
-    lines += ['',f'预设研发采用条件：**{"通过" if adoption else "未通过"}**。须同时改善完整/五点平均误差、各至少6/10药改善且失败不增加；这不是临床验证或论文录用标准。','',
+    lines += ['',f'Predefined development adoption criterion: **{"Pass" if adoption else "Fail"}**. Both full/five-point mean errors must improve, at least 6/10 drugs must improve in each, and failures must not increase. This is not a clinical-validation or publication-acceptance criterion.','',
         '| Condition | RBC / direct GMFE ratio | 95% study-cluster interval | Improved / worsened |','|---|---:|---|---:|']
     for s in base.SAMPLINGS:
         c=comparisons[s]['direct_relaxed']
         value='—' if c['estimate'] is None else f'{c["estimate"]:.4f}'
         interval='—' if c['ci95'] is None else f'[{c["ci95"][0]:.4f}, {c["ci95"][1]:.4f}]'
         lines.append(f'| {s} | {value} | {interval} | {c["ratio_below_one"]} / {c["ratio_above_one"]} |')
-    lines += ['','[全部11类终点的预测、真实参考与误差](results.csv) · [统计、失败与诊断](results.json)。','',
-        '改动只允许原生公式预测的RBC分配参与开发校准；同步改B/P和血管容量，不改人体血量/血流/实测fu/净肾输入。记录为派生模型参数，不是原生读回或实测值。',
-        'blood_partition和exchange_shape都拟合4参数，后者控制额外自由度；direct_relaxed为3参数冻结基线。两个新方法均每公式16固定起点、最多16384实际调用；旧拟合不作为暖启动。',
-        '新增40个方法×药物×采样单元，复用40个基线/两室参照；这些不是80个独立药物。保留全部880行终点记录，缺参考仍留空。',
-        '五点估计4参数有过拟合风险。拟合RBC只能解释为有效参数；缺CL稳定性、无开发曲线能力、临床风险可靠均未由此验证。','',
-        '`runtime/app-env/bin/python -B scripts/run_blood_partition_blueprint.py status` 查询；`report`复算评分。']
+    lines += ['','[Predictions, real references, and errors for all 11 endpoint types](results.csv) · [Statistics, failures, and diagnostics](results.json).','',
+        'Only native-formula-predicted RBC partition is opened to development calibration. B/P and vascular capacity change together; human blood volume, flow, measured fu, and net renal inputs remain fixed. Values are recorded as derived model parameters, not native readbacks or measurements.',
+        'blood_partition and exchange_shape both fit four parameters; the latter controls additional degrees of freedom. direct_relaxed is the frozen three-parameter baseline. Each new method uses 16 fixed starts and at most 16384 physical calls per formula, without warm starts from old fits.',
+        'Forty new method-drug-sampling units reuse 40 baseline/two-compartment references; these are not 80 independent drugs. All 880 endpoint rows remain, with absent references left empty.',
+        'Fitting four parameters to five points risks overfitting. Fitted RBC partition is only an effective parameter; this does not validate stability without CL, prediction without a development curve, or clinical-risk reliability.','',
+        'Inspect with `runtime/app-env/bin/python -B scripts/run_blood_partition_blueprint.py status`; `report` recalculates scores.']
     (RUN/'README.md').write_text('\n'.join(lines)+'\n')
     state.update(status='complete',completed_at=time.time());save(RUN/'state.json',state)
     return dict(status='complete',new_units=len(state['units']),rows=len(rows),summary=summary,development_adoption_rule_passed=adoption)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+# Unicode escapes preserve historical source filenames and field names.
 """Extract the user-selected raster diagram without redrawing any foreground.
 
 Opaque source RGB, dimensions, lettering and positions are invariant. Object
@@ -13,7 +15,7 @@ from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SOURCE = Path('/home/xuyiqian/.codex/attachments/4c63bfd7-577c-475a-ba0f-5f4bb7d14a41/ChatGPT 图像 2026年10月21日 19_38_07.png')
+DEFAULT_SOURCE = Path('/home/xuyiqian/.codex/attachments/4c63bfd7-577c-475a-ba0f-5f4bb7d14a41/ChatGPT \u56fe\u50cf 2026\u5e7410\u670821\u65e5 19_38_07.png')
 OUTPUT = ROOT / 'results/figures/workflow/figure_2_blueprint_original_transparent.png'
 
 

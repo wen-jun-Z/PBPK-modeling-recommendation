@@ -511,8 +511,8 @@ def test_readme_update_preserves_handwritten_content_outside_markers(tmp_path, m
     path.parent.mkdir(parents=True)
     first = "<!-- frontier-automatic-results:start -->"
     last = "<!-- frontier-automatic-results:end -->"
-    prefix = "# 手写核心说明\n\n原始实验成果必须保留。\n\n"
-    suffix = "\n\n后续手写计划\n\n  保留原缩进与末尾空白  \n"
+    prefix = "# Handwritten core notes\n\nOriginal experiment results must be retained.\n\n"
+    suffix = "\n\nHandwritten follow-up plan\n\n  Preserve original indentation and trailing spaces  \n"
     path.write_text(prefix + first + "\nold generated data\n" + last + suffix)
     assessment.write_readme_results(readme_result())
     updated = path.read_text()
@@ -531,7 +531,7 @@ def test_partial_readme_does_not_publish_method_ranking(tmp_path, monkeypatch, a
     path.write_text("# Existing project prose\n")
     assessment.write_readme_results(readme_result(state="partial", assessment_state=assessment_state))
     value = path.read_text()
-    assert "| 方法 |" not in value
+    assert "| Method |" not in value
     assert "should\\_not\\_publish\\_partial\\_method" not in value
     assert "0.987" not in value
 

@@ -394,7 +394,7 @@ def test_json_grammar_keeps_batch_rows_separate_and_preserves_scientific_text(de
     from pbpk_kb.recommendation.local_llm import LocalStructuredGenerator
     if device == "cuda" and not torch.cuda.is_available():
         pytest.skip("Project GPU unavailable")
-    alphabet = list(dict.fromkeys(string.printable + "τ±μ中文"))
+    alphabet = list(dict.fromkeys(string.printable + "τ±μ\u4e2d\u6587"))
     ids = {char: index + 1 for index, char in enumerate(alphabet)}
     vocab = ["<eos>", *alphabet]
     info = xgr.TokenizerInfo(vocab, xgr.VocabType.RAW, stop_token_ids=[0])
@@ -403,7 +403,7 @@ def test_json_grammar_keeps_batch_rows_separate_and_preserves_scientific_text(de
     generator._compiled_json_grammar = xgr.GrammarCompiler(info, max_threads=2).compile_json_schema(
         {"type": "object", "additionalProperties": True}, strict_mode=False)
     processor = generator._json_generation_kwargs(3, 4096)["logits_processor"][0]
-    documents = [json.dumps({"value": 10600.58, "source_text": "AUC(τ, ss) 10600.58 ± 1960.40 μg/mL 中文"}, ensure_ascii=False),
+    documents = [json.dumps({"value": 10600.58, "source_text": "AUC(τ, ss) 10600.58 ± 1960.40 μg/mL \u4e2d\u6587"}, ensure_ascii=False),
                  json.dumps({"candidates": [None] * 25})]
     sequences = [[999, 998, 997], [888, 887, 886]]
     for position in range(max(map(len, documents)) + 1):
@@ -614,7 +614,7 @@ def test_production_grammar_forbids_unbounded_outer_whitespace_and_keeps_quotes(
     from pbpk_kb.recommendation.local_llm import LocalStructuredGenerator
     if device == "cuda" and not torch.cuda.is_available():
         pytest.skip("Project GPU unavailable")
-    alphabet = list(dict.fromkeys(string.printable + "τ±μ中文∞–")); ids = {c:i+1 for i,c in enumerate(alphabet)}
+    alphabet = list(dict.fromkeys(string.printable + "τ±μ\u4e2d\u6587∞–")); ids = {c:i+1 for i,c in enumerate(alphabet)}
     info = xgr.TokenizerInfo(["<eos>", *alphabet],xgr.VocabType.RAW,stop_token_ids=[0])
     monkeypatch.setattr(xgr.TokenizerInfo,'from_huggingface',lambda *args,**kwargs:info)
     generator = object.__new__(LocalStructuredGenerator); generator.enforce_json = True
@@ -630,7 +630,7 @@ def test_production_grammar_forbids_unbounded_outer_whitespace_and_keeps_quotes(
         assert not torch.isfinite(scores[0,ids[' ']])
         assert not torch.isfinite(scores[0,ids['\n']])
         assert torch.isfinite(scores[0,ids['n']])
-    document=json.dumps({'source_text':'    AUC 0–∞     82% ± μ 中文\nverbatim spacing    ', 'candidates':[None]*25},ensure_ascii=False,separators=(',',':'))
+    document=json.dumps({'source_text':'    AUC 0–∞     82% ± μ \u4e2d\u6587\nverbatim spacing    ', 'candidates':[None]*25},ensure_ascii=False,separators=(',',':'))
     processor=generator._json_generation_kwargs(1,4096)['logits_processor'][0];sequence=[999]
     for position, char in enumerate(document):
         scores=processor(torch.tensor([sequence],device=device),torch.zeros((1,len(alphabet)+1),device=device))

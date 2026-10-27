@@ -57,18 +57,18 @@ def paper(summary):
     lines += [r"\bottomrule", r"\end{tabular}", r"\endgroup"]
     (directory / "clinical_table.tex").write_text("\n".join(lines) + "\n")
     statements = [
-        "使用相同自动标签、冻结文本向量和分组方案补充三个监督对照；简单拼接与PBPK-Match使用相同204维条件信息，区别为是否加入文本向量绝对差与逐元素乘积。每种方法完成5×(3+1)=20次拟合；内层确定训练轮次与温度，外层只作留出评价。主比较关闭误差修正，避免把执行误差监督计为文档融合结构的贡献。",
-        "表注：NDCG与Recall沿用40条含已知正例请求的已判子集；敏感度为原102请求中74个已知Y对的检出比例，未知不作负例。首位未知率按全部145请求的完整列表及并列期望计算。两条规则无概率输出，Y-F1和敏感度不适用。PBPK-Match最终版的NDCG、Recall、Y-F1、敏感度与无误差修正版相同，故本表不重复列出。",
-        "临床表注：每行仅在该控制与PBPK-Match无误差修正版共同可计分的场景比较首位GMFE；不同控制的交集可以不同，不能跨行宣称统一排名。曲线仅2场景、同一研究，是案例而非总体泛化证据。全部11终点、三个精确位置、完整覆盖和缺失仍在report/summary.json中保留。"]
+        'Three supervised controls share automatic labels, frozen text vectors, and grouping. Concatenation and PBPK-Match use the same 204 condition features; the difference is adding absolute text-vector differences and elementwise products. Each method completes 5x(3+1)=20 fits. Inner folds select epochs and temperature; outer folds are held out. Primary comparison disables error correction so execution-error supervision is not credited to document-fusion structure.',
+        'Table note: NDCG and Recall use judged subsets of 40 requests with known positives. Sensitivity is detection of 74 known Y pairs among the original 102 requests; unknowns are not negatives. Top-1 unknown rate uses complete lists and tie expectations across all 145 requests. The two rules output no probabilities, so Y-F1 and sensitivity do not apply. Final PBPK-Match has the same NDCG, Recall, Y-F1, and sensitivity as its no-error-correction version and is not duplicated.',
+        'Clinical table note: each row compares top-1 GMFE only on scenarios jointly scorable by that control and PBPK-Match without error correction. Intersections may differ across controls, so rows do not establish a common ranking. Curves cover only two scenarios from one study and are cases rather than generalization evidence. All 11 endpoints, three exact positions, full coverage, and missing values remain in report/summary.json.']
     for method in order[:-1]:
         row = rows[method]
         test = next(t for t in summary["paired_quality"] if t["method"] == method and t["metric"] == "ndcg@10")
         delta, ci = test["mean_group_delta"], test["bootstrap_95ci"]
         c, v = clinical[method], curve[method]
-        statements.append(f"{DISPLAY[method]}：NDCG={row['ndcg@10']:.4f}；相对PBPK-Match的分组平均NDCG差={delta:.4f}，95% CI=[{ci[0]:.4f}, {ci[1]:.4f}]，Holm p={test['holm_p']:.4f}。共同{c['shared_scenarios']}个Cmax场景，PBPK-Match/控制GMFE={number(c['own_gmfe'])}/{number(c['comparator_gmfe'])}；共同{v['shared_scenarios']}个曲线场景的控制GMFE={number(v['comparator_gmfe'])}。")
+        statements.append(f"{DISPLAY[method]}: NDCG={row['ndcg@10']:.4f}; grouped mean NDCG difference versus PBPK-Match={delta:.4f}, 95% CI=[{ci[0]:.4f}, {ci[1]:.4f}], Holm p={test['holm_p']:.4f}. Shared Cmax scenarios={c['shared_scenarios']}, PBPK-Match/control GMFE={number(c['own_gmfe'])}/{number(c['comparator_gmfe'])}; control GMFE on {v['shared_scenarios']} shared curve scenarios={number(v['comparator_gmfe'])}.")
         paired = next(t for t in summary["paired_execution"][0]["comparisons"] if t["method"] == method and t["endpoint"] == "Cmax_reference_vs_group")
-        statements.append("首位Cmax配对绝对对数误差统计（控制减PBPK）：" + str({k: paired.get(k) for k in ("mean_paired_absolute_log_error_difference", "bootstrap_95ci", "holm_adjusted_p", "independent_compound_publication_blocks", "state", "reason")}))
-    statements.append("这些新增对照仅检验现有开发资料和自动标签下的相对贡献；不解决专家标签可靠性，也不构成独立外部验证。若简单拼接与PBPK-Match差异不明确，不将新融合结构表述为已建立优势。")
+        statements.append('Top-1 Cmax paired absolute log-error statistics (control minus PBPK):' + str({k: paired.get(k) for k in ("mean_paired_absolute_log_error_difference", "bootstrap_95ci", "holm_adjusted_p", "independent_compound_publication_blocks", "state", "reason")}))
+    statements.append('These controls test relative contributions on existing development data and automatic labels. They do not resolve expert-label reliability or provide independent external validation. If concatenation and PBPK-Match do not differ clearly, the new fusion structure is not described as having an established advantage.')
     (directory / "analysis.txt").write_text("\n\n".join(statements) + "\n")
 
 

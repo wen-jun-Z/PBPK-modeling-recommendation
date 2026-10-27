@@ -15,48 +15,48 @@ from watch_blueprint_suite import ProcessScope, inside, read_json
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
-    ('历史三药', 'reviewed_development_suite_20260920'),
-    ('机制两药', 'mechanism_suite_20260920'),
-    ('呋塞米', 'furosemide_mechanism_suite_20260920_seed_fix_v2'),
-    ('克拉霉素原尝试', 'clarithromycin_source_suite_20260920'),
-    ('克拉霉素窗口修复', 'clarithromycin_window_fix_suite_20260920'),
-    ('克拉霉素重建修复', 'clarithromycin_rebuild_fix_suite_20260920'),
-    ('瑞舒伐他汀', 'rosuvastatin_source_suite_20260920'),
-    ('伏立康唑', 'voriconazole_source_suite_20260920'),
-    ('伏立康唑重建修复', 'voriconazole_rebuild_fix_suite_20260920'),
-    ('阿托伐他汀', 'atorvastatin_source_suite_20260920'),
+    ('Historical three-drug suite', 'reviewed_development_suite_20260920'),
+    ('Two-drug mechanism suite', 'mechanism_suite_20260920'),
+    ('Furosemide', 'furosemide_mechanism_suite_20260920_seed_fix_v2'),
+    ('Clarithromycin original attempt', 'clarithromycin_source_suite_20260920'),
+    ('Clarithromycin window repair', 'clarithromycin_window_fix_suite_20260920'),
+    ('Clarithromycin reconstruction repair', 'clarithromycin_rebuild_fix_suite_20260920'),
+    ('Rosuvastatin', 'rosuvastatin_source_suite_20260920'),
+    ('Voriconazole', 'voriconazole_source_suite_20260920'),
+    ('Voriconazole reconstruction repair', 'voriconazole_rebuild_fix_suite_20260920'),
+    ('Atorvastatin', 'atorvastatin_source_suite_20260920'),
 )
 PIPELINES = (
-    ('克拉霉素方法接续', 'blueprint_followup_clarithromycin_20260920_status.json'),
-    ('克拉霉素修复接续', 'blueprint_followup_clarithromycin_window_fix_20260920_status.json'),
-    ('克拉霉素重建修复接续', 'blueprint_followup_clarithromycin_rebuild_fix_20260920_status.json'),
-    ('瑞舒伐他汀方法接续', 'blueprint_followup_rosuvastatin_20260920_status.json'),
-    ('伏立康唑方法接续', 'blueprint_followup_voriconazole_20260920_status.json'),
-    ('伏立康唑修复后方法接续', 'blueprint_followup_voriconazole_rebuild_fix_20260920_status.json'),
-    ('呋塞米外部验证', 'blueprint_furosemide_validation_pipeline_status_seed_fix_v2.json'),
-    ('呋塞米外部验证接口修复', 'blueprint_furosemide_external_contract_fix_20260920_status.json'),
-    ('伏立康唑外部验证', 'blueprint_voriconazole_validation_followup_status.json'),
-    ('伏立康唑修复后外部验证', 'blueprint_voriconazole_rebuild_validation_followup_status.json'),
-    ('瑞舒伐他汀外部验证', 'blueprint_rosuvastatin_validation_followup_status.json'),
-    ('阿托伐他汀方法接续', 'blueprint_followup_atorvastatin_20260920_status.json'),
-    ('阿托伐他汀外部验证', 'blueprint_atorvastatin_validation_followup_status.json'),
-    ('阿托伐他汀提案接续', 'blueprint_atorvastatin_after_qwen_status.json'),
+    ('Clarithromycin method follow-up', 'blueprint_followup_clarithromycin_20260920_status.json'),
+    ('Clarithromycin repair follow-up', 'blueprint_followup_clarithromycin_window_fix_20260920_status.json'),
+    ('Clarithromycin reconstruction-repair follow-up', 'blueprint_followup_clarithromycin_rebuild_fix_20260920_status.json'),
+    ('Rosuvastatin method follow-up', 'blueprint_followup_rosuvastatin_20260920_status.json'),
+    ('Voriconazole method follow-up', 'blueprint_followup_voriconazole_20260920_status.json'),
+    ('Voriconazole post-repair method follow-up', 'blueprint_followup_voriconazole_rebuild_fix_20260920_status.json'),
+    ('Furosemide external validation', 'blueprint_furosemide_validation_pipeline_status_seed_fix_v2.json'),
+    ('Furosemide external-validation interface repair', 'blueprint_furosemide_external_contract_fix_20260920_status.json'),
+    ('Voriconazole external validation', 'blueprint_voriconazole_validation_followup_status.json'),
+    ('Voriconazole post-repair external validation', 'blueprint_voriconazole_rebuild_validation_followup_status.json'),
+    ('Rosuvastatin external validation', 'blueprint_rosuvastatin_validation_followup_status.json'),
+    ('Atorvastatin method follow-up', 'blueprint_followup_atorvastatin_20260920_status.json'),
+    ('Atorvastatin external validation', 'blueprint_atorvastatin_validation_followup_status.json'),
+    ('Atorvastatin proposal follow-up', 'blueprint_atorvastatin_after_qwen_status.json'),
 )
-HISTORICAL_ATTEMPTS = {'克拉霉素原尝试', '克拉霉素窗口修复', '伏立康唑'}
+HISTORICAL_ATTEMPTS = {'Clarithromycin original attempt', 'Clarithromycin window repair', 'Voriconazole'}
 EXTERNAL_PIPELINES = {
-    '呋塞米': '呋塞米外部验证接口修复',
-    '瑞舒伐他汀': '瑞舒伐他汀外部验证',
-    '伏立康唑重建修复': '伏立康唑修复后外部验证',
-    '阿托伐他汀': '阿托伐他汀外部验证',
+    'Furosemide': 'Furosemide external-validation interface repair',
+    'Rosuvastatin': 'Rosuvastatin external validation',
+    'Voriconazole reconstruction repair': 'Voriconazole post-repair external validation',
+    'Atorvastatin': 'Atorvastatin external validation',
 }
 ACTIVE_STATES = {'running', 'starting', 'waiting_for_methods', 'waiting_for_qwen', 'waiting_for_previous_suite'}
 LABELS = {
-    'running': '运行中', 'completed': '已结束', 'stopped': '已停止',
-    'completed_with_failures': '已结束（保留失败记录）',
-    'stopped_or_stale': '进程已退出', 'not_started': '未启动', 'not_registered': '未登记',
-    'waiting_for_methods': '自动等待方法完成', 'waiting_for_qwen': '等待 Qwen',
-    'waiting_for_previous_suite': '等待前置队列', 'predictions': '独立预测中', 'scoring': '独立评分中',
-    'handed_off': '已交接', 'starting': '启动中',
+    'running': 'Running', 'completed': 'Finished', 'stopped': 'Stopped',
+    'completed_with_failures': 'Finished with failures retained',
+    'stopped_or_stale': 'Process exited', 'not_started': 'Not started', 'not_registered': 'Not registered',
+    'waiting_for_methods': 'Waiting for methods to finish', 'waiting_for_qwen': 'Waiting for Qwen',
+    'waiting_for_previous_suite': 'Waiting for the preceding queue', 'predictions': 'Independent prediction running', 'scoring': 'Independent scoring running',
+    'handed_off': 'Handed off', 'starting': 'Starting',
 }
 
 
@@ -241,9 +241,9 @@ def snapshot():
             'planned_design_runs_target': plan['planned_mandatory_design_runs_total'],
             'all_planned_experiments_queued': False,
             'requires_later_preparation_and_launch': [
-                '克拉霉素新研究的重复给药原生验证及独立评分接续',
-                '其余药物的资料资格核验、原生适配与完整方法对照',
-                '全规模独立主实验、用途/机制目标、稳健性与合成机制挑战',
+                'Native repeat-dose verification and independent scoring follow-up for the new Clarithromycin study',
+                'Source qualification, native adaptation, and complete method comparisons for the other drugs',
+                'Full-scale independent primary experiments, purpose/mechanism targets, robustness, and synthetic mechanism challenges',
             ],
             'counts_are_targets_not_registered_task_counts': True,
         }
@@ -271,144 +271,144 @@ def table(rows):
 
 
 def render(report, *, history=False, details=False):
-    lines = ['PBPK 实验进度  ' + report['checked_at_utc'], '']
+    lines = ['PBPK experiment progress  ' + report['checked_at_utc'], '']
     if report.get('status') == 'source_adaptation_pilot':
         pilot = report['source_adaptation_pilot']
         counts = []
         if 'cases' in pilot and 'adaptations_accepted' in pilot:
-            counts.append(f"模型适配 {pilot['adaptations_accepted']}/{pilot['cases']}")
-        counts.append(f"原生执行与读回 {pilot.get('completed_native_jobs', 0)}/{pilot.get('planned_native_jobs', 0)}")
+            counts.append(f"Model adaptation {pilot['adaptations_accepted']}/{pilot['cases']}")
+        counts.append(f"Native execution and readback {pilot.get('completed_native_jobs', 0)}/{pilot.get('planned_native_jobs', 0)}")
         if 'successful_native_jobs' in pilot:
-            counts.append(f"通过 {pilot['successful_native_jobs']}")
+            counts.append(f"Passed {pilot['successful_native_jobs']}")
         if 'planned_pk_checks' in pilot:
-            counts.append(f"PK 检查完成 {pilot.get('completed_pk_checks', 0)}/{pilot['planned_pk_checks']}")
+            counts.append(f"PK checks completed {pilot.get('completed_pk_checks', 0)}/{pilot['planned_pk_checks']}")
         evidence_mode = pilot.get('mode') == 'evidence_blueprint'
-        title = '人体模板与药物证据构建' if evidence_mode else '完整来源模型适配'
-        lines += [f"{title}：{label(pilot.get('status'))}；阶段={pilot.get('stage')}。",
-                  '；'.join(counts) + '。',
-                  f"用时 {duration(pilot.get('elapsed_seconds'))}；进程存活={pilot.get('registered_runner_alive')}。",
-                  ((f"本轮覆盖 {pilot.get('compound_count', '-')} 药、{pilot.get('study_count', '-')} 研究；固定构建规则，扩展终点评测；不代表独立盲测。"
+        title = 'Construction from human physiology and drug evidence' if evidence_mode else 'Complete source-model adaptation'
+        lines += [f"{title}: {label(pilot.get('status'))}; Stage={pilot.get('stage')}. ",
+                  '; '.join(counts) + '. ',
+                  f"Elapsed {duration(pilot.get('elapsed_seconds'))}; Process alive={pilot.get('registered_runner_alive')}. ",
+                  ((f"This batch covers {pilot.get('compound_count', '-')} drugs and{pilot.get('study_count', '-')} studies; fixed construction rules with extended endpoint evaluation, not independent blinded validation."
                     if pilot.get('cohort_mode') == 'multidrug_endpoints' else
-                    '本轮是一药两研究的证据构建开发检查；不代表独立预测验证，旧大规模实验没有恢复。')
-                   if evidence_mode else '本轮是两药小规模工程检查与历史观测回归；旧大规模实验没有恢复。'),
-                  '结果目录：' + str(ROOT / pilot['path'])]
+                    'This is a one-drug, two-study development check of evidence-based construction, not independent predictive validation. The old full-scale experiments remain stopped.')
+                   if evidence_mode else 'This is a two-drug engineering check and historical-observation regression. The old full-scale experiments remain stopped.'),
+                  'Result directory: ' + str(ROOT / pilot['path'])]
         if pilot.get('reason'):
-            lines.append('原因：' + pilot['reason'])
+            lines.append('Reason: ' + pilot['reason'])
         for job in report.get('auxiliary_jobs', []):
-            lines.append(f"后续小评估：{job['name']}；{label(job.get('status'))}；阶段={job.get('stage', '-')}；"
-                         f"执行 {job.get('completed_native_jobs', 0)}/{job.get('planned_native_jobs', '-')}；"
-                         f"用时 {duration(job.get('elapsed_seconds'))}。")
+            lines.append(f"Follow-up pilot: {job['name']}; {label(job.get('status'))}; Stage={job.get('stage', '-')}; "
+                         f"Executed {job.get('completed_native_jobs', 0)}/{job.get('planned_native_jobs', '-')}; "
+                         f"Elapsed {duration(job.get('elapsed_seconds'))}. ")
         if details:
             lines.extend(f"  {key}: {value.get('status')}" for key, value in pilot.get('jobs', {}).items())
         return '\n'.join(lines)
     if report.get('status') == 'algorithm_redesign':
-        lines += ['当前阶段：重新设计基于人体生理与完整药物模型的蓝图算法。',
-                  '旧蓝图实验结果已按要求删除；没有安排新的实验。',
-                  '原始模型、药物证据、临床观测与必要的构建输入保留。',
-                  '方法见 docs/推荐策略.md 的蓝图设计部分；验证安排见 docs/研究计划.md 第 9 节。']
+        lines += ['Current phase: redesign blueprint construction around human physiology and complete drug models.',
+                  'Old blueprint experiment results were removed as requested; no new experiments are scheduled.',
+                  'Original models, drug evidence, clinical observations, and required construction inputs are retained.',
+                  'See blueprint design in docs/recommendation_strategy.md and validation in section 9 of docs/research_plan.md.']
         return '\n'.join(lines)
     pilot = report.get('native_design_pilot')
     if pilot:
-        lines.append(f"当前小规模评估：{label(pilot.get('status'))}；阶段={pilot.get('stage')}；"
-                     f"设计 {pilot.get('completed_designs', 0)}/{pilot.get('planned_designs', 8)}；"
-                     f"预测尝试 {pilot.get('completed_predictions', 0)}/{pilot.get('planned_predictions', 28)}；"
-                     f"成功 {pilot.get('successful_predictions', 0)}。")
+        lines.append(f"Current pilot evaluation: {label(pilot.get('status'))}; Stage={pilot.get('stage')}; "
+                     f"Designs {pilot.get('completed_designs', 0)}/{pilot.get('planned_designs', 8)}; "
+                     f"Prediction attempts {pilot.get('completed_predictions', 0)}/{pilot.get('planned_predictions', 28)}; "
+                     f"Succeeded {pilot.get('successful_predictions', 0)}. ")
         for item in pilot['active_designs']:
-            lines.append(f"  {item['drug']} / {item['method']}：{item['stage']}；调用={item['budget'].get('logical_calls', '-')}。")
-        lines.append('旧全量队列保持暂停；小规模评估单独登记。\n')
+            lines.append(f"  {item['drug']} / {item['method']}: {item['stage']}; Calls={item['budget'].get('logical_calls', '-')}. ")
+        lines.append('The old full-scale queue remains paused; pilot evaluation is registered separately.\n')
     if report.get('experiment_hold', {}).get('status') == 'paused':
         if any(row['status'] in ACTIVE_STATES for row in report['suites'] + report['pipelines']):
-            lines.append('存在暂停记录，但检测到活动队列；以以下实时状态为准。\n')
+            lines.append('A pause record exists, but an active queue was detected; use the live status below.\n')
         elif pilot:
             pass
         elif report['experiment_hold'].get('development_status') == 'code_verified_waiting_for_small_evaluation':
-            lines.append('旧实验已暂停：算法开发与代码检查已完成，下一步为小规模真实评估；旧结果保留。\n')
+            lines.append('Old experiments are paused. Algorithm implementation and code checks are complete; a small real-data evaluation is next. Old results are retained.\n')
         else:
-            lines.append('实验已暂停：先完成需求与证据引导算法；结果保留，剩余任务需另行启动。\n')
+            lines.append('Experiments are paused pending the requirement- and evidence-guided algorithm. Results are retained; remaining tasks require a separate start.\n')
     pipelines = {row['name']: row for row in report['pipelines']}
     displayed = [row for row in report['suites'] if history or row['name'] not in HISTORICAL_ATTEMPTS]
-    rows = [['队列', '状态', '已结束/计划', '完整', '预算耗尽', '其他结束', '用时', '独立评价/接续']]
+    rows = [['Queue', 'Status', 'Finished/planned', 'Complete', 'Budget exhausted', 'Other termination', 'Elapsed', 'Independent evaluation/follow-up']]
     for row in displayed:
         counts = row.get('method_status_counts') or {}
         state = label(row['status'])
-        if row['name'] == '阿托伐他汀' and row['status'] == 'not_started':
-            followers = [pipelines.get(n, {}) for n in ('阿托伐他汀方法接续', '阿托伐他汀提案接续')]
+        if row['name'] == 'Atorvastatin' and row['status'] == 'not_started':
+            followers = [pipelines.get(n, {}) for n in ('Atorvastatin method follow-up', 'Atorvastatin proposal follow-up')]
             live = next((p for p in followers if p.get('registered_process_alive') is True), None)
-            state = label(live['status']) if live else '未启动/需处理'
+            state = label(live['status']) if live else 'Not started/action needed'
         external = pipelines.get(EXTERNAL_PIPELINES.get(row['name']))
         if external:
             evaluation = label(external.get('stage') if external['status'] == 'running' else external['status'])
             if external['status'] == 'completed':
-                evaluation = '独立评价已结束'
-        elif row['name'] == '克拉霉素重建修复':
-            evaluation = '独立接续尚未接通'
+                evaluation = 'Independent evaluation finished'
+        elif row['name'] == 'Clarithromycin reconstruction repair':
+            evaluation = 'Independent follow-up not connected'
         else:
-            evaluation = '见既有结果'
+            evaluation = 'See saved results'
         rows.append([row['name'], state, f"{sum(counts.values())}/{row.get('planned_method_jobs', 57)}",
                      counts.get('completed', 0), counts.get('budget_exhausted', 0),
                      sum(v for k, v in counts.items() if k not in {'completed', 'budget_exhausted'}),
                      duration(row.get('elapsed_seconds')), evaluation])
     lines.append(table(rows))
-    lines.append('已结束含预算耗尽和其他终止；不代表全部搜索完成或预测质量合格。')
+    lines.append('Finished includes budget exhaustion and other termination; it does not mean complete search or acceptable predictive quality.')
     if 'qwen_atorvastatin' in report:
         qwen = report['qwen_atorvastatin']
-        lines.append(f"阿托伐他汀 Qwen：{label(qwen['state'])}，{qwen['completed']}/{qwen['total']} 条提案。")
+        lines.append(f"Atorvastatin Qwen: {label(qwen['state'])}, {qwen['completed']}/{qwen['total']} proposals.")
     if details or history:
-        lines.append('\n进程与自动接续：')
+        lines.append('\nProcesses and automatic follow-up:')
         for row in report['pipelines']:
-            if not history and row['name'] in {'克拉霉素方法接续', '克拉霉素修复接续', '伏立康唑方法接续', '伏立康唑外部验证', '呋塞米外部验证'}:
+            if not history and row['name'] in {'Clarithromycin method follow-up', 'Clarithromycin repair follow-up', 'Voriconazole method follow-up', 'Voriconazole external validation', 'Furosemide external validation'}:
                 continue
-            if (not history and row['name'] == '阿托伐他汀提案接续' and row['status'] == 'stopped'
-                    and any(s['name'] == '阿托伐他汀' and s['status'] in {'running', 'completed'} for s in displayed)):
+            if (not history and row['name'] == 'Atorvastatin proposal follow-up' and row['status'] == 'stopped'
+                    and any(s['name'] == 'Atorvastatin' and s['status'] in {'running', 'completed'} for s in displayed)):
                 continue
-            lines.append(f"  {row['name']}: {label(row['status'])}; PID={row.get('pid', '-')}; 存活={row.get('registered_process_alive', '-')}")
+            lines.append(f"  {row['name']}: {label(row['status'])}; PID={row.get('pid', '-')}; Alive={row.get('registered_process_alive', '-')}")
             if row.get('reason'):
-                lines.append('    原因：' + row['reason'])
+                lines.append('    Reason: ' + row['reason'])
             if row.get('status_path'):
-                lines.append('    状态文件：' + str(ROOT/row['status_path']))
+                lines.append('    Status file: ' + str(ROOT/row['status_path']))
         for row in displayed:
             if row.get('registered_runner_alive'):
-                lines.append(f"  {row['name']} 实验主进程 PID={row['runner_pid']}")
+                lines.append(f"  {row['name']} Experiment main process PID={row['runner_pid']}")
             for task in row.get('active_method_progress', []):
                 budget = task['budget']
                 lines.append(f"  {row['name']} {task['method']}/seed {task['seed']} {task['stage']}: "
-                    f"逻辑调用={budget.get('logical_calls', '-')}, 实际调用={budget.get('physical_calls', '-')}, "
-                    f"求解失败={budget.get('failed_calls', '-')}")
+                    f"Logical calls={budget.get('logical_calls', '-')}, Physical calls={budget.get('physical_calls', '-')}, "
+                    f"Solver failures={budget.get('failed_calls', '-')}")
     data = report.get('data', {})
-    lines.append(f"\n资料：{data.get('candidate_drugs', '-')} 种候选药物，{data.get('protocol_records', '-')} 份协议资料，"
-                 f"{data.get('numerical_curve_drugs', '-')} 药有完整数值曲线；候选数不等于已完成评测数。")
+    lines.append(f"\nSources: {data.get('candidate_drugs', '-')} candidate drugs,{data.get('protocol_records', '-')} protocol records,"
+                 f"{data.get('numerical_curve_drugs', '-')} drugs have complete numerical curves; candidate count is not completed evaluation count.")
     if data.get('background_data_acquisition_running') is False:
-        lines.append('资料下载：本轮已收尾，没有持续下载进程。')
+        lines.append('Source acquisition is complete for this batch; no persistent download process remains.')
     plan = report.get('research_plan')
     if plan:
         if report.get('experiment_hold', {}).get('development_status') == 'code_verified_waiting_for_small_evaluation':
-            lines.append('当前下一步：新算法的 2–3 药小规模对照；以下为暂缓的历史完整目标。')
-        lines.append(f"完整计划尚未全部排队：{plan['development_drugs_target']} 种开发药物 + "
-            f"{plan['independent_evaluation_drugs_target']} 种独立评测药物，{plan['planned_design_runs_target']:,} 次目标运行。")
-        lines.extend('  后续需准备并启动：' + text for text in plan['requires_later_preparation_and_launch'])
-    lines.append('仅查看登记进程和进度，不读取封存观测或评分；退出查看不会停止实验。')
+            lines.append('Next: a two- to three-drug pilot comparison of the new algorithm. The historical full-scale goals below remain deferred.')
+        lines.append(f"The full plan is not completely queued: {plan['development_drugs_target']} development drugs + "
+            f"{plan['independent_evaluation_drugs_target']} independent evaluation drugs,{plan['planned_design_runs_target']:,} planned runs.")
+        lines.extend('  Requires later preparation and launch: ' + text for text in plan['requires_later_preparation_and_launch'])
+    lines.append('Read-only registered-process monitoring; sealed observations and scores are not read. Closing this display does not stop experiments.')
     return '\n'.join(lines)
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='只读查看 PBPK 实验状态；不调用 LLM，不控制实验进程。')
-    parser.add_argument('--json', action='store_true', help='机器可读输出；监看模式每行一个 JSON')
-    parser.add_argument('--watch', type=float, nargs='?', const=10, metavar='秒', help='自动刷新，默认 10 秒，Ctrl+C 只退出查看')
-    parser.add_argument('--history', action='store_true', help='同时显示已被修复版本替代的旧尝试')
-    parser.add_argument('--details', action='store_true', help='显示 PID、当前方法、调用数及停止原因')
-    parser.add_argument('--count', type=int, metavar='次数', help='监看若干次后自动退出')
+    parser = argparse.ArgumentParser(description='Read-only PBPK experiment status; no LLM calls or experiment process control.')
+    parser.add_argument('--json', action='store_true', help='Machine-readable output; one JSON per line in watch mode')
+    parser.add_argument('--watch', type=float, nargs='?', const=10, metavar='SECONDS', help='Refresh automatically, every 10 seconds by default; Ctrl+C exits the display only')
+    parser.add_argument('--history', action='store_true', help='Include old attempts superseded by repaired versions')
+    parser.add_argument('--details', action='store_true', help='Show PID, current method, call counts, and stop reasons')
+    parser.add_argument('--count', type=int, metavar='COUNT', help='Exit after the specified number of refreshes')
     args = parser.parse_args(argv)
     if args.watch is not None and not 2 <= args.watch <= 3600:
-        parser.error('--watch 间隔须在 2..3600 秒之间')
+        parser.error('--watch interval must be between 2 and 3600 seconds')
     if args.count is not None and (args.count < 1 or args.watch is None):
-        parser.error('--count 须为正整数，并与 --watch 一起使用')
+        parser.error('--count must be a positive integer used with --watch')
     try:
         iteration = 0
         while True:
             try:
                 report = snapshot()
             except (OSError, ValueError, RuntimeError, KeyError) as exc:
-                print('无法可靠读取当前状态：' + str(exc), file=sys.stderr)
+                print('Cannot reliably read the current state: ' + str(exc), file=sys.stderr)
                 if args.watch is None:
                     return 1
             else:
@@ -424,7 +424,7 @@ def main(argv=None):
             time.sleep(args.watch)
     except KeyboardInterrupt:
         if not args.json:
-            print('\n已退出进度查看，未改变实验状态。')
+            print('\nProgress display closed; experiment state unchanged.')
         return 0
 
 

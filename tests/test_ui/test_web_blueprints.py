@@ -317,13 +317,13 @@ def test_custom_human_drives_prediction_fit_presentation_and_download(bundle, tm
 
 def test_custom_human_rebuild_failure_never_uses_the_original_anatomy(bundle, tmp_path, monkeypatch):
     def failed_rebuild(*args, **kwargs):
-        raise ValueError('人体构建失败：测试异常')
+        raise ValueError('Human construction failed: synthetic error')
     def unexpected_prediction(*args, **kwargs):
         pytest.fail('A failed human rebuild must not silently reuse the old anatomy')
     monkeypatch.setattr(web,'rebuild_physiology',failed_rebuild)
     monkeypatch.setattr(web.model,'simulate',unexpected_prediction)
     changed=human_input(bundle,weight_kg=80.)
-    with pytest.raises(ValueError,match='人体构建失败'):
+    with pytest.raises(ValueError,match='Human construction failed'):
         web._run_prediction(body(bundle,human=changed,development_curve=development_input(bundle,changed)),
                             bundle,lambda *_:None,output=tmp_path/'prediction')
 
@@ -334,7 +334,7 @@ def test_native_human_builder_rejects_existing_output_without_writing(bundle, tm
     def unexpected_build(*args, **kwargs):
         pytest.fail('Existing native output must not be overwritten or reused')
     monkeypatch.setattr(human_builder,'_physiology',unexpected_build)
-    with pytest.raises(ValueError,match='新的任务目录'):
+    with pytest.raises(ValueError,match='new job directory'):
         human_builder.rebuild_physiology(bundle['request'],output,web.ROOT)
     assert marker.read_text()=='existing result'
 
@@ -348,7 +348,7 @@ def test_native_human_builder_rejects_output_outside_its_workspace(bundle, monke
     def unexpected_build(*args, **kwargs):
         pytest.fail('Out-of-scope paths must be rejected before native execution')
     monkeypatch.setattr(human_builder,'_physiology',unexpected_build)
-    with pytest.raises(ValueError,match='工作台'):
+    with pytest.raises(ValueError,match='workspace'):
         human_builder.rebuild_physiology(bundle['request'],web.ROOT/path,web.ROOT)
 
 
@@ -373,7 +373,7 @@ def test_native_human_builder_reports_infrastructure_failure_without_fallback(bu
         raise failure
     monkeypatch.setattr(human_builder,'_native_workspace_bytes',lambda *_:0)
     monkeypatch.setattr(human_builder,'_physiology',failed_build)
-    with pytest.raises(ValueError,match='未使用旧人体替代') as error:
+    with pytest.raises(ValueError,match='Old physiology was not substituted') as error:
         human_builder.rebuild_physiology(bundle['request'],tmp_path/'failed-human',web.ROOT)
     assert error.value.__cause__ is failure
     assert len(calls)==1
@@ -384,9 +384,9 @@ def test_integrity_and_project_boundary(tmp_path):
     pin={'path':str(source),'sha256':hashlib.sha256(source.read_bytes()).hexdigest()}
     assert web._ref(pin)=={'value':1}
     source.write_text('{"value":9}')
-    with pytest.raises(ValueError,match='校验'):web._ref(pin)
-    with pytest.raises(ValueError,match='范围'):web._path('/outside/not-a-project-file')
-    with pytest.raises(ValueError,match='范围'):web._path(web.ROOT/'../not-a-project-file')
+    with pytest.raises(ValueError,match='verification'):web._ref(pin)
+    with pytest.raises(ValueError,match='project'):web._path('/outside/not-a-project-file')
+    with pytest.raises(ValueError,match='project'):web._path(web.ROOT/'../not-a-project-file')
 
 
 def test_async_history_download_and_restart(tmp_path,bundle,monkeypatch):

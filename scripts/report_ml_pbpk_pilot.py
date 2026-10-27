@@ -236,17 +236,17 @@ def clinical_rows(cases, methods, summary, locks):
 
 def markdown(cases, methods, summary, split, parameters, curve_rows, reported, native, run):
     lines = ["# ML + PBPK small pilot — 2026-09-28", "",
-        f"本轮完成 {summary['attempted_clinical_predictions']} 个临床预测尝试，其中 {summary['successful_native_predictions']} 个通过原生执行。"
-        f"参数训练集 {split['train_count']} 个化合物，测试集 {split['test_count']} 个，按分子骨架隔离。",
-        "", f"总用时 {summary['elapsed_seconds'] / 60:.2f} 分钟，实际原生求解 "
-        f"{sum(j['result'].get('native_evaluations', 0) for j in summary['results'].values())} 次。"
-        "本轮只评价缺少目标药物临床PK参数时的构建分支；有可靠独立参数证据时，仍应优先使用证据。",
-        "", "模型只从训练集学习 CL、Vss、fu、半衰期和 MRT；临床三药及其骨架从训练和参数测试集排除。"
-        "PBPK 输入使用预测 CL/fu 与独立理化资料；映射方法进一步匹配预测 Vss，未使用临床曲线或临床终点拟合。",
-        "", "Median direct = 训练集中位数直接输入；RF direct = 随机森林参数直接输入；RF + Vss mapping = 将随机森林的 CL/Vss 映射到 PBPK。",
-        "", "**当前判断：尚不扩大临床实验。** 随机森林参数比中位数基线好，但咖啡因曲线与末段浓度仍明显失准；"
-        "Vss映射也没有在共同药物上进一步降低整体曲线误差。下一步先改善CL、Vss、fu预测及其到PBPK的转换，"
-        "保留本轮固定对照和失败记录。不能把参数映射收敛当作预测准确，也不能用这3个已查看病例反复调参后再称独立验证。",
+        f"This batch attempted {summary['attempted_clinical_predictions']} clinical predictions; {summary['successful_native_predictions']} passed native execution. "
+        f"Parameter training contains {split['train_count']} compounds and testing {split['test_count']}, separated by molecular scaffold.",
+        "", f"Total elapsed time: {summary['elapsed_seconds'] / 60:.2f} minutes; actual native solves: "
+        f"{sum(j['result'].get('native_evaluations', 0) for j in summary['results'].values())}. "
+        'This evaluates only construction when target-drug clinical PK parameters are missing. Reliable independent parameter evidence should still take priority.',
+        "", 'The model learns CL, Vss, fu, half-life, and MRT only from training data. The three clinical drugs and their scaffolds are excluded from training and parameter testing. '
+        'PBPK inputs use predicted CL/fu and independent physicochemical data; mapping additionally matches predicted Vss without fitting clinical curves or endpoints.',
+        "", 'Median direct uses training medians; RF direct uses random-forest parameters; RF + Vss mapping maps RF CL/Vss into PBPK.',
+        "", '**Current decision: do not expand the clinical experiment yet.** RF parameter prediction beats the median baseline, but the Caffeine curve and terminal concentrations remain inaccurate. '
+        'Vss mapping did not further reduce aggregate curve error on common drugs. First improve CL, Vss, and fu prediction and their conversion to PBPK, '
+        'while retaining fixed controls and failures. Mapping convergence is not predictive accuracy; repeated tuning on these three inspected cases cannot be called independent validation.',
         "", "## Parameter prediction on held-out scaffolds", ""]
     parameter_rows = []
     for endpoint, result in parameters.items():
@@ -257,7 +257,7 @@ def markdown(cases, methods, summary, split, parameters, curve_rows, reported, n
                 f"{100 * metric['within_2fold']:.1f}%" if metric.get("within_2fold") is not None else None])
     lines += [table(["Target", "Unit", "Method", "Train n", "Test n", "GMFE", "log10 RMSE", "Within 2-fold"], parameter_rows),
         "", "## Clinical curve evaluation", "",
-        "所有曲线均在原始临床采样时间比较。AUC 是共有采样窗口内的梯形积分；Cmax 是采样峰值；Clast 是末次采样值。", "",
+        'Curves are compared at original clinical sampling times. AUC is trapezoidal area over the common sampling window; Cmax is the sampled peak; Clast is the final sample. ', "",
         table(["Drug", "Method", "n", "Curve GMFE", "ln-RMSE", "AUC FE", "Sampled Cmax FE", "Clast FE", "Status"],
             [[r["drug"], METHOD_LABELS.get(r["method"], r["method"]), r.get("point_count"),
               number(r.get("gmfe")), number(r.get("ln_rmse")), number(r.get("auc_fold_error")),
@@ -275,17 +275,17 @@ def markdown(cases, methods, summary, split, parameters, curve_rows, reported, n
             math.exp(math.fsum(math.log(v) for v in good) / len(good)) if good else None,
             len(common), math.exp(math.fsum(math.log(v) for v in common) / len(common)) if common else None])
     lines += [table(["Method", "Scored / attempted drugs", "GMFE (available drugs)", "Common drugs n", "GMFE (common drugs)"], macro),
-        "", "GMFE按药物等权取几何平均。共同子集为：" + (", ".join(sorted(common_drugs)) or "无") + "。"
-        "不同方法成功药物数不同时，不能用各自可用病例的平均值直接宣称最好；应同时看共同子集和全部尝试的覆盖率。",
+        "", 'GMFE is the drug-equally-weighted geometric mean. Common subset: ' + (", ".join(sorted(common_drugs)) or 'None') + "."
+        'When methods succeed on different drug counts, their available-case means cannot establish an overall winner; compare common subsets and coverage of all attempts.',
         "", "## Clinical paper-reported endpoint references", "",
-        "这里的 O 来自论文直接报告的临床 PK 结果，不是我们对平均曲线重算的 NCA。"
-        "本批有10个已核对的参考值：Midazolam 6个，Alfentanil 4个；每种方法均保留全部参考比较。"
-        "Caffeine 此表未收录论文标量参考，但其真实曲线已评分。",
-        "", f"原文终点比较总计 {len(reported)} 项：{sum(r['status'] == 'evaluated' for r in reported)} 项可评价，"
-        f"{sum(r['status'] == 'descriptive_only' for r in reported)} 项仅作描述，"
-        f"{sum(r['status'] == 'unavailable' for r in reported)} 项预测不可用。",
-        "", "P 为本次预测。Cmax/Tmax 的主比较使用可用临床时间点采样的预测值；CSV 另外保留原生密集网格结果。"
-        "其他终点使用原生模型终点。FE = max(P/O, O/P)；Tmax只给绝对时间误差。", ""]
+        'O denotes PK endpoints reported directly in the publication, not our NCA recalculation of the mean curve. '
+        'There are ten verified reference values: six for Midazolam and four for Alfentanil. Every method retains all reference comparisons. '
+        'This table has no reported scalar references for Caffeine, but its real curve was scored.',
+        "", f"Reported-endpoint comparisons: {len(reported)} total; {sum(r['status'] == 'evaluated' for r in reported)} evaluable, "
+        f"{sum(r['status'] == 'descriptive_only' for r in reported)} descriptive only, "
+        f"{sum(r['status'] == 'unavailable' for r in reported)} with unavailable predictions.",
+        "", 'P denotes the current prediction. Primary Cmax/Tmax comparisons sample predictions at available clinical times; CSV also retains native dense-grid results. '
+        'Other endpoints use native model outputs. FE = max(P/O, O/P); Tmax uses absolute time error only.', ""]
     for case in cases:
         subset = [r for r in reported if r["drug"] == case["drug"]]
         if not subset:
@@ -296,12 +296,12 @@ def markdown(cases, methods, summary, split, parameters, curve_rows, reported, n
                   r["predicted"], r["observed_reported"], r["fold_error"], r["absolute_error_h"], r["status"]] for r in subset]),
             "", "Reference: [clinical publication](" + subset[0]["reference_source_url"] + "). " +
             ("Geometric means; Tmax is a median." if case["drug"] == "midazolam" else "Arithmetic means of individual PK estimates."), ""]
-    lines += ["原生终末半衰期来自模型很晚的低浓度尾部，原论文的终末拟合窗口无法匹配。"
-        "这6项保留预测值、临床值和原始倍数误差，标记 descriptive_only，不计入临床验证成功数或两倍误差通过率。"
-        "CSV 另外保留最后4个临床采样时间对应的半衰期预测；它也不代表已复现原论文个体NCA拟合窗口。", "",
+    lines += ['Native terminal half-life comes from a very late low-concentration model tail; the publication terminal fitting window cannot be matched. '
+        'These six comparisons retain predictions, clinical values, and raw fold errors as descriptive_only, excluded from clinical-validation success counts and twofold pass rates. '
+        'CSV also retains half-life prediction over the last four clinical times; this does not reproduce the original individual NCA fitting window.', "",
         "## All 11 requested native prediction classes", "",
-        "以下是模型输出清单，不代表每项都有临床参考。— 表示未得到通过质量检查的结果；空值未补成0。"
-        "有限窗口和末次浓度按原请求定义，可能不同于临床首末采样窗口。曲线为完整数列，链接保留全部数值。", ""]
+        'This is a model-output inventory, not a claim of clinical references for every item. A dash indicates no result passing quality checks; missing values are not filled with zero.'
+        'Finite-window and last-concentration outputs follow the original request, which may differ from the clinical first-to-last sampling window. Curves remain full numerical series. ', ""]
     for case in cases:
         rows = []
         for endpoint, (label, _, unit) in ENDPOINTS.items():
@@ -318,17 +318,17 @@ def markdown(cases, methods, summary, split, parameters, curve_rows, reported, n
         lines += [f"### {case['drug'].title()}", "", table(["Endpoint", "Unit", *[METHOD_LABELS.get(m, m) for m in methods]], rows), ""]
     failed = [r for r in summary["results"].values() if r["result"]["status"] != "predicted"]
     lines += ["## Limits and reproducibility", "",
-        "半衰期与Vz还存在模型极晚低浓度尾部的问题；输出可计算不等于有生理或临床可信度。"
-        "不通过放宽尾部质量门槛或隐藏失败来提高成绩。", "",
-        "三种药物均是历史开发资料。本轮验证流程和暴露出的误差，不能证明临床决策能力或 SOTA；未调整测试标签、删除失败或根据临床结果选择参数。"
-        "单个代表性人体与群体平均曲线存在人群差异；总清除率集中到肝脏是本轮约定，未验证器官归属。"
-        "11类终点未完成逐病例全参考验证。", ""]
+        'Half-life and Vz still depend on very late low-concentration tails; numerical computability is not physiological or clinical credibility. '
+        'Scores are not improved by relaxing tail-quality gates or hiding failures.', "",
+        'All three drugs are historical development cases. The workflow checks and observed errors establish neither clinical decision capability nor SOTA. Test labels were not changed, failures were not deleted, and parameters were not selected from clinical outcomes.'
+        'A representative individual differs from a population mean curve. Concentrating total clearance in the liver is a batch convention, not verified organ attribution. '
+        'Complete per-case clinical reference validation of all 11 endpoint types is not finished.', ""]
     if failed:
         lines += [table(["Drug", "Method", "Failure"], [[r["drug"],r["method"], r["result"].get("reason", r["result"]["status"])] for r in failed]), ""]
-    lines += [f"数据来源和划分：[parameter_split.json]({run / 'parameter_split.json'})；"
-        f"论文终点逐项评分：[reported_endpoint_comparison.csv]({run / 'reported_endpoint_comparison.csv'})；"
-        f"全部预测终点：[native_endpoint_predictions.csv]({run / 'native_endpoint_predictions.csv'})。", "",
-        "只重新生成报告，不启动实验：", "", "```bash",
+    lines += [f"Data and split: [parameter_split.json]({run / 'parameter_split.json'}); "
+        f"Reported-endpoint comparisons: [reported_endpoint_comparison.csv]({run / 'reported_endpoint_comparison.csv'}); "
+        f"All predicted endpoints: [native_endpoint_predictions.csv]({run / 'native_endpoint_predictions.csv'}).", "",
+        'Regenerate the report only, without starting experiments:', "", "```bash",
         f"cd {ROOT}", f"runtime/app-env/bin/python -B scripts/report_ml_pbpk_pilot.py --run {run}", "```", ""]
     return "\n".join(lines)
 

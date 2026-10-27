@@ -30,17 +30,17 @@ def _native_workspace_bytes(workspace: Path, output: Path) -> int:
     """Count retained native job artifacts without traversing other resources."""
     jobs = workspace / 'blueprints'
     if jobs.is_symlink():
-        raise ValueError('蓝图任务目录不能是符号链接')
+        raise ValueError('Blueprint job directory must not be a symbolic link')
     total, included = 0, False
     if jobs.exists():
         for job in jobs.iterdir():
             if job.is_symlink():
-                raise ValueError('蓝图任务目录不能是符号链接')
+                raise ValueError('Blueprint job directory must not be a symbolic link')
             if not job.is_dir():
                 continue
             native = job / 'human'
             if native.is_symlink():
-                raise ValueError('人体输出目录不能是符号链接')
+                raise ValueError('Human output directory must not be a symbolic link')
             if native.exists():
                 total += _directory_bytes(native)
                 included = included or native == output
@@ -67,53 +67,53 @@ def rebuild_physiology(
         raw = root / raw
     workspace = root / 'runtime/deployment/workspace'
     if '..' in raw.parts or raw == workspace or not raw.is_relative_to(workspace):
-        raise ValueError('人体重建输出必须位于本项目工作台的独立任务目录')
+        raise ValueError('Human reconstruction output must use a separate job directory within this project workspace')
     output = inside(raw, root)
     if not output.is_relative_to(workspace):
-        raise ValueError('人体重建输出不能通过链接离开工作台目录')
+        raise ValueError('Human reconstruction output must not escape the workspace through links')
     if output.exists():
-        raise ValueError('人体重建需要新的任务目录，不能复用旧人体结果')
+        raise ValueError('Human reconstruction requires a new job directory and cannot reuse old physiology results')
 
     req = EvidenceBlueprintRequest.model_validate(request).model_dump(mode='json', exclude_none=True)
     if req['dosing']['route'] != 'intravenous':
-        raise ValueError('当前人体重建仅支持成人单药单次静脉给药')
+        raise ValueError('Human reconstruction currently supports adults, one drug, and a single intravenous dose')
     started = time.monotonic()
 
     def guard():
         if before_trial is not None:
             before_trial()
         if time.monotonic() - started > BUILD_TIMEOUT_SECONDS:
-            raise TimeoutError('人体重建超过 600 秒时限，任务已停止且不会自动重试')
+            raise TimeoutError('Human reconstruction exceeded the 600-second limit; the job stopped without automatic retries')
         # Native writers independently check their bounded directory every
         # 0.2 seconds; this adds a combined check between stages and at return.
         if output.exists() and _directory_bytes(output) > MAX_OUTPUT_BYTES:
-            raise ValueError('人体重建输出超过大小上限，任务已停止')
+            raise ValueError('Human reconstruction output exceeded its size limit; the job stopped')
         if _native_workspace_bytes(workspace, output) > WORKSPACE_NATIVE_LIMIT_BYTES:
-            raise ValueError('人体任务文件已达到 2 GiB 上限，请先下载并整理已保存的任务后再生成；系统不会自动删除旧结果')
+            raise ValueError('Human job files reached the 2 GiB limit. Download and organize saved jobs before generating another; old results will not be deleted automatically')
 
     guard()
     try:
         physiology = _physiology(req, output, root, guard)
     except InfrastructurePause as exc:
-        raise ValueError('人体原生构建或校验失败，未使用旧人体替代；任务诊断已保留') from exc
+        raise ValueError('Native human construction or validation failed. Old physiology was not substituted; job diagnostics were preserved') from exc
     guard()
 
     # Bind returned physiology to this exact new native execution, not an
     # arbitrary cached or substituted document with a matching display weight.
     completion = json.loads((output / 'base/completion.json').read_text())
     if completion['request'] != req or completion.get('actual_native_solver_calls') != 1:
-        raise ValueError('人体重建记录与提交条件不一致')
+        raise ValueError('Human reconstruction record does not match the submitted conditions')
     reference = completion['execution_manifest']
     manifest_path = inside(reference['path'], root, exists=True)
     if (manifest_path.parent != output / 'base/native'
             or sha256(manifest_path) != reference['sha256']
             or physiology.get('source_execution_manifest_sha256') != reference['sha256']):
-        raise ValueError('新人体的原生执行来源校验失败')
+        raise ValueError('Native execution source verification failed for the new human conditions')
     execution = json.loads(manifest_path.read_text())
     snapshot_path = manifest_path.parent / 'snapshot.json'
     if (execution.get('engineering_accepted') is not True
             or sha256(snapshot_path) != execution.get('source_sha256')):
-        raise ValueError('新人体原生执行或快照校验失败')
+        raise ValueError('Native execution or snapshot verification failed for the new human conditions')
     snapshot = json.loads(snapshot_path.read_text())
     human = req['human']
     expected_origin = {
@@ -126,24 +126,24 @@ def rebuild_physiology(
     if (len(individuals) != 1 or individuals[0].get('OriginData') != expected_origin
             or individuals[0].get('Seed') != human['seed']
             or snapshot['Simulations'][0].get('Individual') != individuals[0].get('Name')):
-        raise ValueError('原生人体条件与提交的年龄、性别、身高、体重不一致')
+        raise ValueError('Native human conditions do not match the submitted age, sex, height, and weight')
     method = 'PK-Sim Standard' if req['partition_method'] == 'PKSimStandard' else 'Rodgers and Rowland'
     expected_method = 'Cellular partition coefficient method - ' + method
     if expected_method not in snapshot['Compounds'][0].get('CalculationMethods', []):
-        raise ValueError('新人体的分配方法与已保存的校准方案不一致')
+        raise ValueError('The new human partition method differs from the saved calibration protocol')
     if physiology.get('compound') != req['compound_name']:
-        raise ValueError('新人体原生读回的药物与提交条件不一致')
+        raise ValueError('The native drug readback differs from the submitted conditions')
     # Native parameter serialization introduces small floating-point differences;
     # use the same relative tolerance as the existing native physiology audits.
     if not math.isclose(float(physiology['weight_kg']), human['weight_kg'], rel_tol=1e-6):
-        raise ValueError('新人体原生读回的体重与提交条件不一致')
+        raise ValueError('The native body-weight readback differs from the submitted conditions')
     if (len(physiology['organs']) != len(ORGANS)
             or {organ['name'] for organ in physiology['organs']} != set(ORGANS)):
-        raise ValueError('新人体原生读回的器官范围不一致')
+        raise ValueError('The native organ set does not match the expected scope')
     exported = physiology['manifest']
     exported_path = inside(exported['path'], root, exists=True)
     if (exported_path != output / 'physiology/perfusion_physiology.json'
             or sha256(exported_path) != exported['sha256']):
-        raise ValueError('新人体生理参数导出校验失败')
+        raise ValueError('New human physiology export verification failed')
     guard()
     return physiology

@@ -1,6 +1,8 @@
 """Audit saved PBPK model-scoring runs and export paper tables without inference."""
 from __future__ import annotations
 
+# Unicode escapes preserve historical source filenames and field names.
+
 import csv
 import hashlib
 import io
@@ -127,10 +129,10 @@ def build_model_results(root: Path, out: Path) -> dict:
         return json.loads(read(path))
 
     read(Path(__file__))
-    report_path = (base / "01_当前对照结果/results.json").resolve(strict=True)
+    report_path = (base / '01_\u5f53\u524d\u5bf9\u7167\u7ed3\u679c/results.json').resolve(strict=True)
     report = data(report_path)
-    specification = data(base / "02_复现资料/protocol.json")
-    manifest_path = base / "02_复现资料/inputs/manifest.json"
+    specification = data(base / '02_\u590d\u73b0\u8d44\u6599/protocol.json')
+    manifest_path = base / '02_\u590d\u73b0\u8d44\u6599/inputs/manifest.json'
     manifest = data(manifest_path)
     inputs = {}
     for relative, expected in report["input_sha256"].items():
@@ -150,8 +152,8 @@ def build_model_results(root: Path, out: Path) -> dict:
                        for variant in VARIANTS[1:]}
     changed = {variant: len(indices) for variant, indices in changed_indices.items()}
     assert changed == {"reordered": 772, "missing_evidence": 304}
-    csv_records = list(csv.DictReader(io.StringIO(read(base / "当前12组实验汇总.csv").decode("utf-8-sig"))))
-    csv_by_method = {row["方法"]: row for row in csv_records}
+    csv_records = list(csv.DictReader(io.StringIO(read(base / '\u5f53\u524d12\u7ec4\u5b9e\u9a8c\u6c47\u603b.csv').decode("utf-8-sig"))))
+    csv_by_method = {row['\u65b9\u6cd5']: row for row in csv_records}
     assert len(csv_records) == len(csv_by_method) == 12
     assert set(csv_by_method) == set(report["methods"]) == {m[0] for m in METHODS}
     rows, generation = [], []
@@ -159,7 +161,7 @@ def build_model_results(root: Path, out: Path) -> dict:
         saved = report["methods"][method_id]
         assert saved["state"] == "complete"
         assert all(metric["value"] is None for metric in saved["scientific_metrics"].values())
-        folder = base / "01_当前对照结果" / method_id
+        folder = base / '01_\u5f53\u524d\u5bf9\u7167\u7ed3\u679c' / method_id
         index = data(folder / "index.json")
         assert index["variants"] == list(VARIANTS)
         assert index["query_ids"] == [q["query_id"] for q in queries]
@@ -221,10 +223,10 @@ def build_model_results(root: Path, out: Path) -> dict:
             for values in row["throughput_by_query_batch_size"].values():
                 _equal(values["queries"] / values["batch_wall_seconds"], values["queries_per_second"], method_id + ":throughput")
         old = csv_by_method[method_id]
-        assert old["状态"] == "complete" and int(old["请求数"]) == 772 and int(old["候选数"]) == 280
-        assert int(old["全部变体评分数"]) == 648480 and old["采用分数文件"] == row["effective_score_file"]
-        for field, heading in (("tie_fraction", "原始Top1并列比例"), ("reorder_top1", "句子重排Top1一致率"),
-                               ("missing_top1", "缺失证据Top1一致率"), ("peak_gpu_gib", "峰值GPU分配_GiB")):
+        assert old['\u72b6\u6001'] == "complete" and int(old['\u8bf7\u6c42\u6570']) == 772 and int(old['\u5019\u9009\u6570']) == 280
+        assert int(old['\u5168\u90e8\u53d8\u4f53\u8bc4\u5206\u6570']) == 648480 and old['\u91c7\u7528\u5206\u6570\u6587\u4ef6'] == row["effective_score_file"]
+        for field, heading in (("tie_fraction", '\u539f\u59cbTop1\u5e76\u5217\u6bd4\u4f8b'), ("reorder_top1", '\u53e5\u5b50\u91cd\u6392Top1\u4e00\u81f4\u7387'),
+                               ("missing_top1", '\u7f3a\u5931\u8bc1\u636eTop1\u4e00\u81f4\u7387'), ("peak_gpu_gib", '\u5cf0\u503cGPU\u5206\u914d_GiB')):
             _equal(row[field], None if old[heading] == "" else float(old[heading]), method_id + ":CSV:" + field)
         rows.append(row)
         if group == "top20":

@@ -15,30 +15,30 @@ router = APIRouter(prefix='/workspace/research', tags=['workspace-research'])
 TABLES = ROOT / 'results/tables'
 CURVES = ROOT / 'results/data/pbpk_match_light_curves.json'
 FAMILIES = {
-    'curve': '浓度曲线', 'finite_AUC': '有限时间窗 AUC', 'Cmax': 'Cmax',
-    'Tmax': 'Tmax', 'C_last': '末次浓度 Clast', 'C_last': 'Clast', 'half_life': '半衰期',
-    'AUC_infinity': 'AUC∞', 'CL': '清除率', 'Vz': '分布容积 Vz',
-    'MRT': '平均滞留时间', 'Vss': '稳态分布容积',
+    'curve': 'Concentration profile', 'finite_AUC': 'Finite-window AUC', 'Cmax': 'Cmax',
+    'Tmax': 'Tmax', 'C_last': 'Last concentration Clast', 'C_last': 'Clast', 'half_life': 'Half-life',
+    'AUC_infinity': 'AUC∞', 'CL': 'Clearance', 'Vz': 'Volume of distribution Vz',
+    'MRT': 'Mean residence time', 'Vss': 'Steady-state distribution volume',
 }
 DOWNLOADS = {
-    'quality': ('模型推荐文档评价 CSV', 'results/tables/model_recommendation_quality.csv'),
-    'endpoints': ('全部终点与覆盖率 CSV', 'results/tables/model_recommendation_eleven_endpoints.csv'),
-    'curves': ('浓度曲线与排名 JSON', 'results/data/pbpk_match_light_curves.json'),
-    'runtime': ('运行成本与稳定性 CSV', 'results/tables/model_recommendation_runtime.csv'),
-    'paper': ('模型推荐论文 PDF', 'results/manuscript/pbpk_paper_zh.pdf'),
+    'quality': ('Model recommendation document evaluation CSV', 'results/tables/model_recommendation_quality.csv'),
+    'endpoints': ('All endpoints and coverage CSV', 'results/tables/model_recommendation_eleven_endpoints.csv'),
+    'curves': ('Concentration curves and rankings JSON', 'results/data/pbpk_match_light_curves.json'),
+    'runtime': ('Runtime cost and stability CSV', 'results/tables/model_recommendation_runtime.csv'),
+    'paper': ('Model recommendation manuscript PDF', 'results/manuscript/pbpk_paper_zh.pdf'),
 }
 LIMITATIONS = [
-    '文档排序指标基于 145 条请求中有已知正例的 40 条；未知候选不当作负例。',
-    '自建方法使用分组训练，对照含未训练的冻结方法；分数不等于临床预测准确率。',
-    '浓度曲线只覆盖同一研究的 2 个场景、6 个候选；缺失结果不递补，覆盖率单独报告。',
-    '新请求使用已保存的小网络进行研究推理，组件增强和误差修正默认关闭。',
+    'Document-ranking metrics cover the 40 of 145 requests with known positives; unknown candidates are not treated as negatives.',
+    'The proposed method uses grouped training, while some comparators remain frozen and untrained. Scores are not clinical prediction accuracy.',
+    'Concentration curves cover two scenarios and six candidates from one study. Missing results are not substituted, and coverage is reported separately.',
+    'New requests use the saved small network for research inference; component augmentation and error correction are disabled by default.',
 ]
 
 
 def scoped_file(relative: str) -> Path:
     path = (ROOT / relative).resolve()
     if not path.is_relative_to(ROOT.resolve()) or not path.is_file():
-        raise HTTPException(404, '当前结果文件不可用')
+        raise HTTPException(404, 'The result file is unavailable')
     return path
 
 
@@ -112,7 +112,7 @@ def endpoints(method_id: str = Query(default='', max_length=100), family: str = 
 def curves(compound: str):
     case = next((c for c in read_json(CURVES)['cases'] if c['compound'] == compound), None)
     if case is None:
-        raise HTTPException(404, '该化合物没有已保存的可比浓度曲线')
+        raise HTTPException(404, 'No saved comparable concentration curves exist for this compound')
     obs = case['observation']
     article = obs.get('source_article')
     source_url = article.get('url') if isinstance(article, dict) else article
@@ -126,15 +126,15 @@ def curves(compound: str):
         'curves': [{**{k: curve[k] for k in ('label', 'candidate_id', 'name', 'time_h', 'concentration_ng_ml', 'gmfe', 'log_rmse')},
                     'model_version_id': curve['candidate_id']} for curve in case['curves']],
         'rankings': case['rankings'],
-        'limitations': ['临床观测为研究组均值，预测为模型参考个体；这些曲线没有按目标观测重新拟合。',
-                        '本页是已完成的固定研究案例，不是当前新请求的仿真结果。'],
+        'limitations': ['Clinical observations are study-group means; predictions use a model reference individual. These curves were not refitted to the target observations.',
+                        'This page shows completed fixed study cases, not simulations for a new request.'],
     }
 
 
 @router.get('/download/{key}')
 def download(key: str):
     if key not in DOWNLOADS:
-        raise HTTPException(404, '没有该下载文件')
+        raise HTTPException(404, 'Download file not found')
     _, relative = DOWNLOADS[key]
     path = scoped_file(relative)
     return FileResponse(path, filename=path.name, media_type={'csv': 'text/csv', 'pdf': 'application/pdf', 'json': 'application/json'}[path.suffix[1:]])

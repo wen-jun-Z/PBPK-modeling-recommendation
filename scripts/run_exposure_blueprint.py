@@ -296,17 +296,17 @@ def report():
         'limitations':['Previously viewed development cohort, not blind validation.','Window trapezoid matching is not observed systemic CL or AUC infinity.','Exposure-constrained estimates three parameters from data, with two outer optimizer coordinates.','No guarantee of improvement or clinical risk reliability; failed and weak-tail endpoints remain visible.']}
     save(RUN/'results.json',document)
     with (RUN/'results.csv').open('w',newline='') as f:w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
-    lines=['# 暴露约束分步校准：十药开发验证','','只用开发研究估计参数，全部目标预测锁定后评分。未替换论文。','', '| Method | Full GMFE | Five-point GMFE | Full coverage |','|---|---:|---:|---:|']
+    lines=['# Exposure-constrained staged calibration: ten-drug development evaluation','','Only development studies estimate parameters; scoring follows locking of all target predictions. The manuscript is not replaced.','', '| Method | Full GMFE | Five-point GMFE | Full coverage |','|---|---:|---:|---:|']
     for m in METHODS+('paper_pbpk_reference','two_compartment_reference'):
         a,b=summary['full'][m],summary['five'][m]
         av='—' if a['estimate'] is None else f"{a['estimate']:.4f}"
         bv='—' if b['estimate'] is None else f"{b['estimate']:.4f}"
         lines.append(f'| {m} | {av} | {bv} | {a["n_cases"]}/10 |')
-    lines+=['','[逐药11类终点、真实参考与误差](results.csv) · [配对区间、失败及计算成本](results.json)。',
-        '', '新方法按可见开发采样窗的梯形面积约束非肾CL，再优化K/PS。没有把局部面积当AUC∞，没有把得到的CL当独立观测；统计上仍估计三个参数。净肾构建输入固定。',
-        '', 'fixed_prior与原法范围/惩罚相同；direct_relaxed只移除CL惩罚并放宽至共同数值区间；exposure_constrained加入面积等式。新三方法每公式16384次实际求解、16起点，内部求根、失败、有限差分均计数。旧论文与两室仅为冻结参照，预算不同。',
-        '', '全部十药已经参与开发，不能据此声称新药无数据预测可靠或具有临床安全性。全部终点与失败保留，未按目标结果删药、改规则或逐药拼接最好方法。',
-        '', '`runtime/app-env/bin/python -B scripts/run_exposure_blueprint.py status` 查看状态，`report`重算结果。']
+    lines+=['','[Per-drug predictions, real references, and errors for 11 endpoint types](results.csv) · [Paired intervals, failures, and compute costs](results.json).',
+        '', 'The new method constrains nonrenal CL using trapezoidal area in the visible development window, then optimizes K/PS. Local area is not AUC infinity, and inferred CL is not an independent observation; three parameters are still statistically estimated. Net renal construction inputs remain fixed.',
+        '', 'fixed_prior retains original bounds and penalties; direct_relaxed removes only the CL penalty and expands to common numerical bounds; exposure_constrained adds the area equality. Each of the three new methods uses 16384 physical solves and 16 starts per formula, counting root finding, failures, and finite differences. Historical manuscript and two-compartment results are frozen references with different budgets.',
+        '', 'All ten drugs participated in development. These results cannot establish reliable data-free new-drug prediction or clinical safety. All endpoints and failures remain; drugs, rules, and per-drug best methods were not selected from target outcomes.',
+        '', 'Use `runtime/app-env/bin/python -B scripts/run_exposure_blueprint.py status`; `report` recalculates results.']
     (RUN/'README.md').write_text('\n'.join(lines)+'\n');state.update(status='complete',completed_at=time.time());save(RUN/'state.json',state)
     return {'status':'complete','new_units':len(state['units']),'rows':len(rows),'summary':summary}
 

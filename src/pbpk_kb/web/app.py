@@ -53,11 +53,11 @@ async def private_access(request: Request, call_next):
     if request.method not in ('GET', 'HEAD', 'OPTIONS'):
         origin = request.headers.get('origin')
         if origin and urlsplit(origin).netloc != request.headers.get('host'):
-            return JSONResponse({'detail': '跨站请求已拒绝'}, status_code=403)
+            return JSONResponse({'detail': 'Cross-site request rejected'}, status_code=403)
         if request.headers.get('sec-fetch-site') == 'cross-site':
-            return JSONResponse({'detail': '跨站请求已拒绝'}, status_code=403)
+            return JSONResponse({'detail': 'Cross-site request rejected'}, status_code=403)
     if request.url.path.startswith('/api') and not authenticated(request):
-        return JSONResponse({'detail': '请先输入个人访问码'}, status_code=401)
+        return JSONResponse({'detail': 'Enter your personal access code first'}, status_code=401)
     response = await call_next(request)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
@@ -76,10 +76,10 @@ def login(body: Login):
     now = time.time()
     _attempts[:] = [t for t in _attempts if now - t < 60]
     if len(_attempts) >= 10:
-        raise HTTPException(429, '尝试过于频繁，请一分钟后再试')
+        raise HTTPException(429, 'Too many attempts. Try again in one minute.')
     if not hmac.compare_digest(body.access_code, secret()):
         _attempts.append(now)
-        raise HTTPException(401, '访问码不正确')
+        raise HTTPException(401, 'Incorrect access code')
     response = JSONResponse({'ok': True})
     response.set_cookie(COOKIE, signed_session(int(now) + 86400), max_age=86400,
                         httponly=True, samesite='strict')
@@ -120,7 +120,7 @@ def summary(db: Session = Depends(get_db_session)):
         'coverage': rows('SELECT attributed_compound_name AS label, count(*) AS count FROM auto_validated_evidence GROUP BY 1 ORDER BY 2 DESC'),
         'sources': rows('SELECT source_id AS label, count(*) AS count FROM auto_validated_evidence GROUP BY 1 ORDER BY 2 DESC'),
         'component_generation': False,
-        'recommendation_method': 'PBPK-Match light 研究推理与用途条件检查',
+        'recommendation_method': 'PBPK-Match light research inference and applicability checks',
         'blueprint_design': True}
 
 
@@ -153,7 +153,7 @@ def model_detail(version_id: UUID, db: Session = Depends(get_db_session)):
     r = db.execute(text('SELECT v.*, m.model_name ' + MODEL_FROM +
                         ' WHERE v.model_version_id=:id'), {'id': version_id}).mappings().first()
     if not r:
-        raise HTTPException(404, '模型版本不存在')
+        raise HTTPException(404, 'Model version not found')
     checks = db.execute(text('''SELECT validation_run_id::text, engineering_accepted,
         scientific_accepted, pooled_gmfe, verification_dataset_count, validated_at
         FROM public_pbpk_model_validation_run WHERE model_version_id=:id ORDER BY validated_at DESC'''), {'id': version_id}).mappings()
@@ -173,7 +173,7 @@ def workspace_document(document_id: UUID, db: Session = Depends(get_db_session))
     exists = db.execute(text('SELECT 1 FROM parsed_document WHERE parsed_document_id=:id'),
                         {'id': document_id}).scalar_one_or_none()
     if not exists:
-        raise HTTPException(404, '来源文档不存在')
+        raise HTTPException(404, 'Source document not found')
     return document_provenance(db, document_id)
 
 
@@ -181,7 +181,7 @@ def redirect_to_source(provenance):
     priority = {'article': 0, 'pdf_local': 1, 'full_text': 2, 'publisher': 3, 'pdf_remote': 4}
     links = sorted(provenance.get('links', []), key=lambda link: priority.get(link['kind'], 99))
     if not links:
-        raise HTTPException(404, '这条证据暂未收录可访问的来源网页或 PDF')
+        raise HTTPException(404, 'This evidence record has no verified accessible source page or PDF')
     return RedirectResponse(links[0]['url'], status_code=307)
 
 
@@ -201,7 +201,7 @@ def source_pdf(document_id: UUID, db: Session = Depends(get_db_session)):
         WHERE raw_document_id=:id'''), {'id': document_id}).mappings().first()
     path = resolve_pdf(dict(record)) if record else None
     if not path:
-        raise HTTPException(404, '本地 PDF 不存在或未通过来源校验')
+        raise HTTPException(404, 'Local PDF is missing or failed source verification')
     return FileResponse(path, media_type='application/pdf', filename=path.name,
                         content_disposition_type='inline')
 
@@ -210,10 +210,10 @@ def source_pdf(document_id: UUID, db: Session = Depends(get_db_session)):
 def download_export(job_id: UUID, db: Session = Depends(get_db_session)):
     path = db.execute(text('SELECT output_path FROM export_job WHERE export_job_id=:id AND status IN (\'completed\', \'succeeded\')'), {'id':job_id}).scalar_one_or_none()
     if not path:
-        raise HTTPException(404, '导出文件尚未生成')
+        raise HTTPException(404, 'Export file has not been generated')
     target = (ROOT / path).resolve()
     if not target.is_relative_to((ROOT / 'exports').resolve()) or not target.is_file():
-        raise HTTPException(404, '导出文件不可用')
+        raise HTTPException(404, 'Export file is unavailable')
     return FileResponse(target, filename=target.name)
 
 

@@ -33,22 +33,16 @@ def publish():
     tex = ROOT / 'results/manuscript/main.tex'
     original, original_sha = tex.read_text(), sha(tex)
     text = original
-    sections = [('DOCUMENT', r'\subsection{推荐模型执行后的预测误差与遗漏}', 'paper_document.tex'),
-                ('EXECUTION', r'\subsection{模型排序的稳定性与并列诊断}', 'paper_execution.tex'),
-                ('STABILITY', r'\subsection{模型排序的运行成本与生成恢复}', 'paper_stability.tex')]
+    sections = [('DOCUMENT', '\\subsection{\u63a8\u8350\u6a21\u578b\u6267\u884c\u540e\u7684\u9884\u6d4b\u8bef\u5dee\u4e0e\u9057\u6f0f}', 'paper_document.tex'),
+                ('EXECUTION', '\\subsection{\u6a21\u578b\u6392\u5e8f\u7684\u7a33\u5b9a\u6027\u4e0e\u5e76\u5217\u8bca\u65ad}', 'paper_execution.tex'),
+                ('STABILITY', '\\subsection{\u6a21\u578b\u6392\u5e8f\u7684\u8fd0\u884c\u6210\u672c\u4e0e\u751f\u6210\u6062\u590d}', 'paper_stability.tex')]
     for name, section, filename in sections:
         path = report / filename
         if not path.is_file() or not path.read_text().strip():
             raise ValueError('Missing verified paper fragment: ' + filename)
         text = insert_before(text, section, name, path.read_text())
-    text = insert_before(text, r'\subsection{PBPK模型蓝图设计}', 'METHOD', r'''
-\paragraph{PBPK-Match v2的用途与误差联合学习}
-PBPK-Match v2将原始需求文本与候选描述联合输入Qwen3-Reranker-0.6B，并将剂量、途径、间隔、输注、进食、制剂及终点窗口的匹配特征接入128维融合网络。仅在最后8层训练秩16的LoRA参数，联合学习文档排序、有序支持等级及适用／不适用／资料不足概率。随后冻结该表示，用训练组的执行结果学习逐终点绝对对数误差$|\ln(\hat y/y)|$；推理仅接收需求和候选资料。各终点至少需要3项独立训练研究，不满足时保留文档分数。预计误差作为非负惩罚修正文档排序；适用概率不等同于已验证可直接复用。
-''')
-    text = insert_before(text, r'\subsection{蓝图设计实验}', 'DESIGN', r'''
-\paragraph{PBPK-Match v2的内部分组验证}
-新增实验复用145条文档请求、41个执行场景及772条稳定性请求，按目标药物、共享研究和重复来源合为37组，采用外层五折、内层三折及种子17、23、41。文档与执行标签分别绑定自身请求；未知等级不补为负例。内层决定早停、温度校准及误差惩罚强度$\{0,0.1,0.3,1\}$：文档NDCG@10下降不超过0.02、覆盖率不降后，在所有合格强度共同可计分的场景选择较低首位误差。外层只评价，单种子与三种子集成分开报告；MLP与LambdaMART使用相同监督信息。此为已有资料上的内部验证，不是新增独立验证，不按评估观测重新拟合PBPK参数。
-''')
+    text = insert_before(text, '\\subsection{PBPK\u6a21\u578b\u84dd\u56fe\u8bbe\u8ba1}', 'METHOD', '\n\\paragraph{Joint applicability and error learning in PBPK-Match v2}\nPBPK-Match v2 jointly encodes raw requests and candidate descriptions with Qwen3-Reranker-0.6B. Dose, route, interval, infusion, food, formulation, and endpoint-window compatibility features enter a 128-dimensional fusion network. Rank-16 LoRA is trained only in the final eight layers, jointly learning document ranking, ordinal support grades, and applicable/inapplicable/insufficient-information probabilities. The representation is then frozen, and training-group execution results learn endpoint-specific absolute log error $|\\ln(\\hat y/y)|$; inference receives only requests and candidate information. Each endpoint requires at least three independent training studies; otherwise document scores remain. Predicted error is a nonnegative ranking penalty. Applicability probability does not establish validated direct reuse.\n')
+    text = insert_before(text, '\\subsection{\u84dd\u56fe\u8bbe\u8ba1\u5b9e\u9a8c}', 'DESIGN', '\n\\paragraph{Grouped internal validation of PBPK-Match v2}\nThe experiment reuses 145 document requests, 41 execution scenarios, and 772 stability requests, combined into 37 groups by target drug, shared study, and duplicate source. It uses five outer folds, three inner folds, and seeds 17, 23, and 41. Document and execution labels remain bound to their own requests; unknown grades are not negatives. Inner folds select early stopping, temperature calibration, and error-penalty strength $\\{0,0.1,0.3,1\\}$. Eligible strengths must reduce document NDCG@10 by no more than 0.02 without decreasing coverage; selection minimizes top-1 error on scenarios scorable for every eligible strength. Outer folds evaluate only. Individual seeds and the three-seed ensemble are separate; MLP and LambdaMART use the same supervision. This is internal validation on existing data, not new independent validation. PBPK parameters are not refitted to evaluation observations.\n')
     destination = OUT / 'publication'
     destination.mkdir(parents=True, exist_ok=True)
     if text != original:

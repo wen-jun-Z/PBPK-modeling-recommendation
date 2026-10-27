@@ -85,15 +85,15 @@ class PBPKRecommendationAgent:
         ]
         model_candidates = [item for item in components if item.component == "public_model_template"]
         gaps = [
-            f"{item.component}: 缺少足够的自动验证证据"
+            f"{item.component}: Insufficient automatically validated evidence"
             for item in components
             if item.component in REQUIRED_COMPONENTS[request.objective]
             and item.status == "insufficient_evidence"
         ]
         if request.objective == "ddi" and not request.interacting_drug:
-            gaps.append("ddi scenario: 未指定相互作用药物，当前只提供一般 DDI 机制建议")
+            gaps.append("ddi scenario: No interacting drug specified; only general DDI mechanism suggestions are available")
         if request.objective == "special_population" and not request.population:
-            gaps.append("special population scenario: 未指定目标人群")
+            gaps.append("special population scenario: No target population specified")
         confidence = weighted_confidence(components, request.objective)
         return RecommendationResponse(
             compound_id=compound_id,
@@ -107,9 +107,9 @@ class PBPKRecommendationAgent:
             public_model_candidates=model_candidates,
             evidence_gaps=gaps,
             warnings=[
-                "推荐仅基于 auto_validated 公共证据。",
-                "推荐是模型设计输入，不代表模型已经完成校准、验证或适用性评价。",
-                "没有来源支持的数值不会自动补全。",
+                "Recommendations use only auto_validated public evidence.",
+                "Recommendations are model-design inputs, not evidence of completed calibration, validation, or applicability assessment.",
+                "Values without source support are not filled automatically.",
             ],
         )
 
@@ -305,20 +305,20 @@ def component_confidence(rows: list[dict[str, Any]], sources: set[str]) -> float
 
 def component_rationale(component: str, status: str, evidence_count: int, source_count: int, request: RecommendationRequest) -> str:
     labels = {
-        "compound_identity": "化合物身份和基础结构",
-        "physicochemical": "理化参数",
-        "absorption": "吸收过程",
-        "distribution": "组织分布",
-        "metabolism": "代谢途径",
-        "excretion": "排泄与清除",
-        "ddi": "药物相互作用",
-        "special_population": "特殊人群",
-        "public_model_template": "公共 PBPK 模型模板",
+        "compound_identity": "Compound identity and basic structure",
+        "physicochemical": "Physicochemical parameters",
+        "absorption": "Absorption",
+        "distribution": "Tissue distribution",
+        "metabolism": "Metabolic pathways",
+        "excretion": "Excretion and clearance",
+        "ddi": "Drug interactions",
+        "special_population": "Special populations",
+        "public_model_template": "Public PBPK model template",
     }
     if status == "insufficient_evidence":
-        return f"{labels[component]}缺少符合当前场景的自动验证证据，不应自动填写参数。"
-    qualifier = "可作为模型设计依据" if status == "recommended" else "可作为候选方向，但覆盖仍不完整"
-    return f"{labels[component]}有 {evidence_count} 条证据、来自 {source_count} 个来源，{qualifier}。"
+        return f"{labels[component]}: no automatically validated evidence matches this scenario; parameters must not be filled automatically."
+    qualifier = "can inform model design" if status == "recommended" else "may inform candidate selection, but coverage remains incomplete"
+    return f"{labels[component]}: {evidence_count} evidence records from {source_count} sources; this evidence {qualifier}."
 
 
 def weighted_confidence(components: list[ComponentRecommendation], objective: str) -> float:

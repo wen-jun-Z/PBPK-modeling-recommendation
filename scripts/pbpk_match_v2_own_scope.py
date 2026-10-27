@@ -72,7 +72,7 @@ def apply():
             'completion_scope': 'full three-seed grouped validation plus existing external results; not the original 300 jobs'})
     check_scope()
     if monitor_alive():
-        print('仅自建模型范围约束已生效。')
+        print('The in-house-model-only scope restriction is active.')
         return
     if not worker.active():
         raise RuntimeError('The existing project training worker is not active; no unrelated process will be started')
@@ -82,7 +82,7 @@ def apply():
     time.sleep(.3)
     if child.poll() is not None:
         raise RuntimeError('Scope monitor could not start; inspect its project log')
-    print(f'仅继续 PBPK-Match v2；范围监控 PID {child.pid}。当前训练不重启。')
+    print(f'Continuing PBPK-Match v2 only; scope-monitor PID {child.pid}. Current training is not restarted.')
 
 
 def decision(state, last_prediction_new, outer_complete, seeds_complete):
@@ -158,12 +158,12 @@ def display():
     jobs = len(list((OUT / 'runs/full').glob('*/*/*/complete.json')))
     filled = round(32 * min(jobs, 60) / 60)
     p = s.get('training_progress', {})
-    return '\n'.join(['PBPK-Match v2 · 仅自建模型',
-        f'自身拟合  ┃{"█"*filled}{"░"*(32-filled)}┃ {jobs}/60  {jobs/60:.1%}',
-        f'当前：{s.get("method", "—")}  seed={s.get("seed", "—")}  外层折={s.get("fold", "—")}  epoch={p.get("epoch", "—")}',
-        f'阶段：{s.get("phase", "—")}  范围监控：{"运行中" if monitor_alive() else worker.read(STATUS, {}).get("state", "未运行")}',
-        '9 个已有对照结果直接复用；其他训练基线和消融暂缓。',
-        f'更新时间：{s.get("updated_at", "—")}', 'Ctrl+C 仅关闭进度显示。'])
+    return '\n'.join(['PBPK-Match v2 · In-house model only',
+        f'In-house fits  ┃{"█"*filled}{"░"*(32-filled)}┃ {jobs}/60  {jobs/60:.1%}',
+        f'Current: {s.get("method", "—")}  seed={s.get("seed", "—")}  Outer fold={s.get("fold", "—")}  epoch={p.get("epoch", "—")}',
+        f'Stage: {s.get("phase", "—")}  Scope monitor: {"Running" if monitor_alive() else worker.read(STATUS, {}).get("state", "Not running")}',
+        'Nine existing controls are reused; other trained baselines and ablations remain deferred.',
+        f'Updated: {s.get("updated_at", "—")}', 'Ctrl+C closes the progress display only.'])
 
 
 def main():

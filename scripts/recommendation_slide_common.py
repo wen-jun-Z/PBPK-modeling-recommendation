@@ -5,8 +5,8 @@ from build_blueprint_method_slides import *
 def recommendation_slide(title, subtitle, section, notes, *, module):
     slide=Slide(title,subtitle,section,notes)
     slide.ops[0]['rows']=[f'PBPK {module}   /   {section}']
-    label='组件推荐' if module=='COMPONENTS' else '模型推荐'
-    slide.ops[4]['rows']=[f'{label} · 原理与流程 · 2026.10.12']
+    label='Component recommendation' if module=='COMPONENTS' else 'Model recommendation'
+    slide.ops[4]['rows']=[f'{label} · Principles and workflow · 2026.10.12']
     return slide
 
 

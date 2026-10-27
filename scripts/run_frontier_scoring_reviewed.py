@@ -407,20 +407,20 @@ def command(python, *args):
 
 def publish_summary():
     folder = ROOT / "experiments/model_recommendation/results_summary"
-    link = folder / f"09_决策次序评分_{PROFILE}"
+    link = folder / f"09_decision_order_assessment_{PROFILE}"
     if not link.exists(): link.symlink_to(os.path.relpath(ASSESS, folder), target_is_directory=True)
     path = folder / "README.md"; text = path.read_text()
     first, last = f"<!-- reviewed-{PROFILE}:start -->", f"<!-- reviewed-{PROFILE}:end -->"
     state = base.read(RUN / "pipeline_status.json", {})
     worker = base.read(RUN / "status.json", {})
-    progress = (f"{'主评分' if worker.get('judge') == 'primary' else '5% 复判'}已提交：{worker.get('committed_pairs', 0):,}/"
-                f"{worker.get('expected_pairs', 216160):,}。" if worker.get("judge") in {"primary", "secondary"} else "全量评分尚未启动。")
-    block = (f"{first}\n## 决策次序评分 {PROFILE}\n\n更新：{base.now()}；阶段：`{state.get('stage', 'prepare')}`；"
-        f"状态：`{state.get('state', 'preparing')}`。{progress}\n\n"
-        "Phi 与 Qwen 全部重新生成判断。旧733条作为回归和来源覆盖；新增32条控制独立报告。"
-        "Phi 每一控制组失败立即停止，未通过来源覆盖与39例复核前不进入全量评分。"
-        "模型自行选等级和引用；未知不记为负标签，引用语法通过不等于专家金标准。\n\n"
-        f"[状态与结果]({link.name}/)；命令：`runtime/app-env/bin/python scripts/run_frontier_scoring_reviewed.py --profile {PROFILE} status` / `stop` / `start`。\n{last}")
+    progress = (f"{'Primary assessment' if worker.get('judge') == 'primary' else '5% repeat judgment'} — committed: {worker.get('committed_pairs', 0):,}/"
+                f"{worker.get('expected_pairs', 216160):,}. " if worker.get("judge") in {"primary", "secondary"} else "Full assessment has not started.")
+    block = (f"{first}\n## Decision-order assessment {PROFILE}\n\nUpdated: {base.now()}; Stage: `{state.get('stage', 'prepare')}`; "
+        f"Status: `{state.get('state', 'preparing')}`. {progress}\n\n"
+        "Phi and Qwen regenerate all judgments. The existing 733 cases assess regression and source coverage; 32 new controls are reported separately. "
+        "Stop immediately if Phi fails any control group. Full assessment requires source coverage and the 39-case review to pass. "
+        "The model selects grades and citations. Unknowns are not negative labels; valid citation syntax is not an expert gold standard.\n\n"
+        f"[Status and results]({link.name}/); Command: `runtime/app-env/bin/python scripts/run_frontier_scoring_reviewed.py --profile {PROFILE} status` / `stop` / `start`. \n{last}")
     if first in text:
         if last not in text: raise ValueError("Incomplete summary markers")
         text = text[:text.index(first)] + block + text[text.index(last)+len(last):]

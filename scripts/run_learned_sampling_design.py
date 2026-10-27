@@ -332,27 +332,27 @@ def report():
 
 
 def write_readme(r):
-    names = dict(learned_gain='学习真实收益（整组留出）', time_farthest='时间覆盖', maximum_variance='浓度方差',
-        c_optimal='官方 c-optimal', request_directed='原非线性效用', linear_covariance='原线性效用',
-        uniform_random='精确随机期望', no_addition='不补点', oracle='事后最优（不可部署）')
-    lines = ['# 学习补点收益：十药开发验证', '',
-        '沿用原人体PBPK预测器，只学习选择哪一个采样点。使用已有140份真实补点结果，新增PBPK拟合为0。10药按9个目标研究整组留出；Ertapenem和Ceftriaxone一起留出。每折分别训练Cmax、AUC∞、半衰期的固定正则线性评分器，共27个小模型。所有药物都已被用于开发，这不是新盲测。', '',
-        '**结论：' + ('通过预设开发扩量门槛；仍需冻结后独立验证。' if r['expand_to_more_drugs'] else '未通过预设扩量门槛。停止在这十药上增加复杂选点变体；保留原PBPK预测器和简单时间规则供后续验证。') + '**', '',
-        '| 方法 | 缺早期点：Cmax GMFE（主） | 缺晚期点：AUC∞ GMFE | 缺晚期点：半衰期 GMFE | 主任务曲线 GMFE |',
+    names = dict(learned_gain='Learned realized gain (group-held-out)', time_farthest='Time coverage', maximum_variance='Concentration variance',
+        c_optimal='Official c-optimal', request_directed='Original nonlinear utility', linear_covariance='Original linear utility',
+        uniform_random='Exact random expectation', no_addition='No additional point', oracle='Post-hoc oracle (not deployable)')
+    lines = ['# Learning additional-point utility: ten-drug development evaluation', '',
+        'The original human PBPK predictor is unchanged; only sampling-point selection is learned. All 140 actual additional-point results are reused, with zero new PBPK fits. Ten drugs are held out in nine target-study groups; Ertapenem and Ceftriaxone are held out together. Each fold trains fixed-regularization linear scorers for Cmax, AUC infinity, and half-life, for 27 small models. All drugs were used in development; this is not a new blinded test.', '',
+        '**Conclusion: ' + ('Passed the predefined development expansion gate; independent validation after freezing is still required.' if r['expand_to_more_drugs'] else 'Did not pass the predefined expansion gate. Stop adding complex selection variants on these ten drugs; retain the original PBPK predictor and simple time rule for subsequent validation.') + '**', '',
+        '| Method | Missing early point: Cmax GMFE (primary) | Missing late point: AUC infinity GMFE | Missing late point: half-life GMFE | Primary-task curve GMFE |',
         '|---|---:|---:|---:|---:|']
     for m in METHODS:
         a = r['summary']['late_four']['cmax'][m]
         b = r['summary']['early_four']
         lines.append(f"| {names[m]} | {a['endpoint']['estimate']:.4f} | {b['auc_inf'][m]['endpoint']['estimate']:.4f} | {b['terminal_half_life'][m]['endpoint']['estimate']:.4f} | {a['curve']['estimate']:.4f} |")
     pair = r['comparisons']['late_four']['cmax']['time_farthest']
-    lines += ['', f"学习法/时间规则的主Cmax误差比为 **{pair['estimate']:.4f}**，研究聚类95%区间 **[{pair['ci95'][0]:.4f}, {pair['ci95'][1]:.4f}]**；{pair['ratio_below_one']}/10药改善、{pair['ratio_above_one']}/10药退步。误差比小于1才是改善。", '',
-        '不补点与补点比较回答“补数据是否有用”；与同预算规则比较才回答“选点算法是否有用”。事后最优只能说明可达空间，不能用来选线上采样点。训练标签用其他药物的临床误差；留出药物的答案不进入本折训练。模型只给相对次序，不能据其正负值判断临床安全或停止采样。', '',
-        '原11类输出全部保存到一个[endpoints.csv](endpoints.csv)，无临床参考留空；Tmax按小时绝对误差评价。随机方法保存各候选误差的精确期望，不虚构一条平均预测。完整双布局、三终点、全部对照和区间见[results.json](results.json)。', '',
-        '固定8项采前特征、ridge α=1，不做超参数或特征择优。全部规则先冻结于[protocol.json](protocol.json)，选择记录见[decisions.json](decisions.json)。训练缩放仅来自训练折，每药等权，每布局等权。140次动作不等于140种独立药物。95%区间条件于本轮交叉验证预测，未重训bootstrap，也不消除已反复开发的偏差。', '',
-        f"新增计算仅为敏感度：{r['resources']['development_calls']}次开发模型求解＋{r['resources']['target_calls']}次目标条件求解，无目标观测输入；耗时{r['resources']['elapsed_seconds']:.1f}秒。当前论文和PBPK基座不改。", '',
-        '命令（项目根目录）：', '```bash',
+    lines += ['', f"Primary Cmax error ratio, learned/time rule: **{pair['estimate']:.4f}**, study-cluster 95% interval **[{pair['ci95'][0]:.4f}, {pair['ci95'][1]:.4f}]**; {pair['ratio_below_one']}/10 drugs improved and {pair['ratio_above_one']}/10 worsened. Only ratios below 1 indicate improvement.", '',
+        'Adding versus not adding a point tests the value of more data; equal-budget rule comparisons test the selection algorithm. The post-hoc oracle bounds attainable performance and cannot select online samples. Training labels use clinical errors of other drugs; held-out drug answers do not enter that fold. Scores provide relative order only and cannot establish clinical safety or a stopping rule from their sign.', '',
+        'All original 11 outputs are in one [endpoints.csv](endpoints.csv), leaving absent clinical references empty. Tmax uses absolute error in hours. The random method reports exact expected candidate errors, not a fabricated mean trajectory. Both layouts, three endpoints, all controls, and intervals are in [results.json](results.json).', '',
+        'Eight pre-observation features and ridge alpha=1 are fixed, without hyperparameter or feature selection. Rules are frozen in [protocol.json](protocol.json), with selections in [decisions.json](decisions.json). Scaling uses training folds only, with equal drug and layout weights. The 140 actions are not 140 independent drugs. The 95% intervals condition on these CV predictions, without bootstrap retraining or removal of repeated-development bias.', '',
+        f"New compute is sensitivity only: {r['resources']['development_calls']} development-model solves and {r['resources']['target_calls']} target-condition solves, without target observations; elapsed {r['resources']['elapsed_seconds']:.1f} seconds. The manuscript and PBPK base remain unchanged.", '',
+        'Commands from the project root:', '```bash',
         'PYTHONDONTWRITEBYTECODE=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 runtime/app-env/bin/python -B scripts/run_learned_sampling_design.py status',
-        '# 同一入口支持 prepare / run / report / cleanup；已有协议不可覆盖。', '```', '']
+        '# The same entry supports prepare / run / report / cleanup; existing protocols cannot be overwritten.', '```', '']
     (RUN / 'README.md').write_text('\n'.join(lines))
 
 

@@ -387,17 +387,17 @@ def report():
     with (RUN/'clinical_endpoints.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
     text=['# Selective blood-partition pilot','',
-          '这是工程决策小试，不是顶刊级创新或临床风险验证。阈值、网格和失败规则在评分前冻结；保留全部十药。',
+          'This is an engineering-decision pilot, not evidence of top-tier novelty or clinical-risk validation. Thresholds, grids, and failure rules were frozen before scoring; all ten drugs remain.',
           '', '## Clinical target curve GMFE','', '| Sampling | Always 3 | Always 4, same formula | Necessity only | Selective |','|---|---:|---:|---:|---:|']
     for sampling in base.SAMPLINGS:text.append('| '+sampling+' | '+' | '.join(f'{summary[sampling][m]["estimate"]:.4f}' for m in METHODS)+' |')
-    text+=['','五点主规则固定保留三参数；四参数不是得到统计证明的真实RBC结合。完整曲线也必须通过工程profile带检查。','',
+    text+=['','The five-point primary rule retains three parameters. Four parameters do not statistically establish true RBC binding. Full curves must also pass the engineering profile-band check.','',
            '## Synthetic mechanism decisions','','| Sampling | Truth | Log-noise SD | Tasks | Selective activated | Necessity activated | Profile status |','|---|---|---:|---:|---:|---:|---|']
     for sampling,ss in synthetic_summary.items():
         for scenario,s in ss.items():
             for sigma,part in s['by_log_sigma'].items():
                 text.append(f'| {sampling} | {scenario} | {sigma} | {part["n"]} | {part["activated"]} | {part["necessity_activated"]} | {part["profile_status_counts"]} |')
-    text+=['','详细临床11类终点见 `clinical_endpoints.csv`；预测、参考和误差逐项保留。合成结果及所有失败见 `results.json`。',
-           '','没有覆盖论文PDF或上一轮最优预测器。合成是恢复检验，不能冒充新增临床证据。',
+    text+=['','All 11 clinical endpoint types are in clinical_endpoints.csv, retaining individual predictions, references, and errors. Synthetic results and every failure are in results.json.',
+           '','The manuscript PDF and preceding best predictor are unchanged. Synthetic recovery checks are not additional clinical evidence.',
            '', '```bash','runtime/app-env/bin/python -B scripts/run_selective_blood_partition.py status','```']
     (RUN/'README.md').write_text('\n'.join(text)+'\n')
     state.update(status='complete',completed_at=time.time(),results=ref(RUN/'results.json'));save(RUN/'state.json',state)

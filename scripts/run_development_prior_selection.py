@@ -151,15 +151,15 @@ def report():
         for ep,v in r['endpoints'].items():rows.append(head|{'endpoint':ep,'prediction':v['value'],'reference':v['reference'],'unit':v['unit'],'error':v['error'],'metric':v.get('error_metric'),'weak_tail':v.get('weak_tail')})
     with (RUN/'results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
-    lines=['# 开发曲线自动选择CL约束：十药复验','','这次检验选择规则，不改变人体PBPK方程。全部选择锁定后才读取冻结目标分数；全部资料已被开发阶段查看。','', '| Method | Full GMFE | Five-point GMFE |','|---|---:|---:|']
+    lines=['# Automatic CL-constraint selection from development curves: ten-drug re-evaluation','','This tests the selection rule without changing the human PBPK equations. Frozen target scores are read only after all selections are locked; all data were previously inspected during development.','', '| Method | Full GMFE | Five-point GMFE |','|---|---:|---:|']
     for method in ('adaptive',)+METHODS:
         a,b=summary['full'][method]['estimate'],summary['five'][method]['estimate']
         lines.append(f'| {method} | {a if a is None else round(a,4)} | {b if b is None else round(b,4)} |')
-    lines+=['','[全部11类终点](results.csv) · [选择、配对区间与失败](results.json)。','',
-        'fold = 时间排序序号 mod 5；每折每政策/公式4096次实际拟合调用、16固定起点。公式只按训练目标选，政策按合并的留点平均绝对log误差选，差值≤1e-12保留固定先验。任何折无可行解则该政策不合格。五点留一只剩四点，选择可能不稳。',
-        '最终候选复用上轮40个独立全量/五点拟合与锁定预测，没有从CV折或完整曲线给五点暖启动。额外CV成本另计，不声称与固定单政策同算力。',
-        '旧项目已有两折弱/强正则CV，本轮仅复验真正移除CL约束后的选择。若未胜过统一放宽，则停止在这些目标上继续调折数、阈值或正则网格，不包装为新的创新。',
-        '', '`runtime/app-env/bin/python -B scripts/run_development_prior_selection.py status` 查看状态，`report`复算报告。']
+    lines+=['','[All 11 endpoint types](results.csv) · [Selections, paired intervals, and failures](results.json).','',
+        'fold = time-order index mod 5. Each fold/policy/formula gets 4096 physical fitting calls and 16 fixed starts. Formula selection uses training objectives only; policy selection uses pooled held-point mean absolute log error, retaining the fixed prior for differences <=1e-12. A policy is ineligible if any fold has no feasible solution. Leaving one of five points leaves four and may destabilize selection.',
+        'Final candidates reuse the preceding 40 independent full/five-point fits and locked predictions. Five-point runs are not warm-started from CV folds or full curves. Additional CV costs are reported separately; equal compute to a single fixed policy is not claimed.',
+        'The project already included two-fold weak/strong regularization CV. This batch only retests selection after truly removing the CL constraint. If it does not beat uniform relaxation, further tuning of folds, thresholds, or regularization grids on these targets stops rather than being presented as a new innovation.',
+        '', 'Use `runtime/app-env/bin/python -B scripts/run_development_prior_selection.py status`; `report` recalculates the report.']
     (RUN/'README.md').write_text('\n'.join(lines)+'\n')
     state.update(status='complete',completed_at=time.time());save(RUN/'state.json',state)
     return {'status':'complete','units':20,'rows':len(rows),'summary':summary,'comparisons':comparisons}

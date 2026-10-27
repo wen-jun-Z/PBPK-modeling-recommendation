@@ -1,31 +1,35 @@
-# PBPK 知识库与模型推荐
+# PBPK knowledge base and model recommendation
 
-提供证据检索与溯源、组件推荐、公共模型推荐和可执行蓝图。
+Evidence retrieval and provenance, component recommendation, public-model recommendation, and executable PBPK blueprints.
 
-**个人网页工作台已接入当前方法（2026-10-19）。** PBPK-Match light 新请求推荐、30 药蓝图设计与实际预测、开发曲线校准、预测曲线和下载均可在网页使用；知识库包含 100 种有证据药物、3,266 条当前可用证据（2026-10-26 实查）及 280 个模型版本。仅监听服务器回环地址，通过个人 SSH 转发和认证访问。[启动与使用](docs/部署.md)
+**Streamlit Community Cloud presentation.** The native English interface is in [`cloud/app.py`](cloud/app.py), with a portable, verified research snapshot and CPU-based blueprint prediction. It does not require the server database or external API keys. See [Cloud deployment](docs/deployment.md#streamlit-community-cloud). Model and component recommendations are clearly identified as saved research results; new GPU inference remains in the private server workspace.
 
-**蓝图核心：来源和用途驱动的自动PBPK构建。** 现有实验支持可追溯构建和部分药物的证据收益，尚未支持普遍准确率优势、缺CL稳定或临床风险可靠。无本药曲线路径与有曲线校准路径分开。[策略与结论边界](docs/推荐策略.md#blueprint-design)
+**The private workspace uses the current method (2026-10-19).** PBPK-Match light recommendation, 30-drug blueprint design and prediction, development-curve calibration, prediction charts, and downloads are available on the server. The knowledge base contains 100 evidence-covered drugs, 3,266 currently usable evidence records (checked on 2026-10-26), and 280 model versions. The server binds to loopback and uses personal SSH forwarding and authentication. [Startup and use](docs/deployment.md).
 
-**当前蓝图方法：人体模板与药物证据 → 未知参数校准 → 可行性检查与必要修复 → 目标条件预测。** 合格药物证据、fu等必要输入及其来源仍保留。正文描述和图表统一展示当前方法，不再标注RF；RF实际输入来源、消融与CL预测器比较集中在论文附录表E.6附近说明。既有实验数值不变，不因展示调整重新运行。[参数处理与复现说明](docs/推荐策略.md#blueprint-rf-role)
+**Blueprint core: source- and purpose-driven automatic PBPK construction.** Existing experiments support traceable construction and evidence benefits for some drugs. They do not establish a general accuracy advantage, stability without CL, or reliable clinical risk prediction. Results without a drug-specific curve are reported separately from curve-calibrated results. [Strategy and limits](docs/recommendation_strategy.md#blueprint-design).
 
-**最新十药结构改进已完成：允许校准缺少实测依据的血细胞分配。** 完整/五点曲线GMFE由1.4884/1.5055降至1.3773/1.4099，作为有开发曲线分支的新候选保留。主要收益集中在3药，半衰期仍有明显偏差；两倍以内指十药的曲线GMFE，不是全部终点。[结果与限制](experiments/blueprint_design/blood_partition_20261008/README.md)
+**Current workflow: human physiology and drug evidence → calibration of unknown parameters → feasibility checks and necessary repair → prediction under target conditions.** Qualified drug evidence, necessary inputs such as fu, and their sources are retained. Main-text descriptions and figures present this workflow without RF labels. Actual RF input provenance, ablations, and CL-predictor comparisons are reported near Appendix Table E.6. Existing numerical results are unchanged; presentation edits do not trigger reruns. [Parameter handling and reproducibility](docs/recommendation_strategy.md#blueprint-rf-role).
 
-**上一轮十药关键采样点验证已完成（2026-10-09）。** 用已有140份补点结果学习简单收益评分，十药按9个研究整组留出，未新增PBPK拟合。缺早期点主任务Cmax GMFE为1.3116，时间规则1.3712，平均改善4.35%；3药改善、5药相同、2药退步，配对区间跨1，未达到多数药物受益的预设门槛。保留该轮未通过门槛的结论，不继续在这十药上调选点器；按用户新增要求开展下述30药扩展，原PBPK预测器和论文保留。[结果与比较图](experiments/blueprint_design/learned_sampling_20261009/README.md) · [策略](docs/推荐策略.md#blueprint-design) · [终端命令](docs/开发.md#offline-blueprint-design)
+**Latest ten-drug structural improvement: calibration of blood-cell partitioning without direct measurements.** Full/five-point curve GMFE decreased from 1.4884/1.5055 to 1.3773/1.4099. This is retained as a candidate for the development-curve branch. Gains concentrate in three drugs and half-life bias remains substantial. Within twofold refers to ten-drug curve GMFE, not every endpoint. [Results and limitations](experiments/blueprint_design/blood_partition_20261008/README.md).
 
-**现有论文保持冻结。** 十药有开发曲线版与二十药无本药曲线版分别报告；不混合两类成绩。旧探索的详细迭代前言已撤下，论文数据、临床来源和必要复现依赖保留。
+**Ten-drug sampling-point evaluation completed (2026-10-09).** A simple utility score was learned from 140 existing additional-point results, holding out ten drugs in nine study groups, without new PBPK fits. In the missing-early-point task, Cmax GMFE was 1.3116 versus 1.3712 for the time rule, a mean improvement of 4.35%. Three drugs improved, five tied, and two worsened; the paired interval crossed 1 and the predefined majority-benefit criterion was not met. This negative conclusion is retained. The selector was not further tuned on these ten drugs; the subsequent user-requested 30-drug extension preserved the original predictor and manuscript. [Results and comparison](experiments/blueprint_design/learned_sampling_20261009/README.md) · [Strategy](docs/recommendation_strategy.md#blueprint-design) · [Commands](docs/development.md#offline-blueprint-design).
 
-**30药修复复评已完成。** 统一训练/评价口径、增加研究留出一致性检查，并在质量守恒证明旧范围不可行时修复未实测血液分配下界。全部30药Cmax/曲线GMFE为1.4417/1.5472，旧法1.7619/1.7071。主要收益来自Montelukast构建修复；相对旧法仍6药改善、8药退步、16药相同，不声称多数药物获益。本轮不覆盖论文。[结果、原因与比较图](experiments/blueprint_design/sampling_stability_20261009/README.md)。
+**Existing manuscript results remain frozen.** The ten-drug development-curve branch and 20-drug branch without a drug-specific curve are reported separately. Their scores are not pooled. Detailed historical exploration notes were removed from the introduction; manuscript data, clinical sources, and required reproduction assets remain.
 
-- [论文PDF](results/manuscript/pbpk_paper_zh.pdf) · [LaTeX源码](results/manuscript/main.tex) · [论文成果](results/README.md)
-- [实验索引](experiments/README.md) · [研究计划](docs/研究计划.md) · [模型推荐策略](docs/推荐策略.md#当前公共模型推荐策略)
-- [十药冻结结果](experiments/blueprint_design/vascular_tissue_ten_drug_20260930/results.json) · [当前冻结研究版本](results/data/blueprint_selected.json)
+**30-drug repair evaluation completed.** Training and evaluation definitions were aligned, study-held-out consistency was checked, and an unmeasured blood-partition lower bound was repaired where mass balance demonstrated infeasibility. All-30-drug Cmax/curve GMFE was 1.4417/1.5472 versus 1.7619/1.7071 previously. Most gains came from the Montelukast construction repair. Relative to the earlier method, six drugs improved, eight worsened, and 16 tied; a majority benefit is not claimed. This experimental batch did not overwrite the manuscript. [Results, causes, and comparison](experiments/blueprint_design/sampling_stability_20261009/README.md).
 
-![PBPK 英文机制版：知识构建、图条件组件生成、模型匹配与蓝图设计](results/figures/workflow/01_four_panel_en_preview.png)
+- [Manuscript PDF](results/manuscript/pbpk_paper_zh.pdf) · [LaTeX source](results/manuscript/main.tex) · [Publication outputs](results/README.md)
+- [Experiment index](experiments/README.md) · [Research plan](docs/research_plan.md) · [Model recommendation strategy](docs/recommendation_strategy.md)
+- [Frozen ten-drug results](experiments/blueprint_design/vascular_tissue_ten_drug_20260930/results.json) · [Current frozen research version](results/data/blueprint_selected.json)
 
-新版英文预览：[01 四宫格](results/figures/workflow/01_four_panel_en_preview.png) · [02 四行流程](results/figures/workflow/02_four_lanes_en_preview.png)。采用 Comic Neue 和卡通科研图示，以简短计算步骤解释检索融合、图软 token、类型匹配及质量守恒。四行版的 C 区展示推荐模型的使用结果（浓度预测、AUC 与 Cmax 示意），D 区展示可执行蓝图与验证报告。
+Some research links refer to server-retained results excluded from GitHub. The Cloud application reads only its committed portable snapshot.
+
+![Evidence-grounded PBPK component recommendation, model matching, and blueprint design](results/figures/workflow/01_four_panel_en_preview.png)
+
+English previews: [Four panels](results/figures/workflow/01_four_panel_en_preview.png) · [Four lanes](results/figures/workflow/02_four_lanes_en_preview.png). Comic Neue and illustrated scientific elements explain retrieval fusion, graph soft tokens, typed matching, and mass conservation. Panel C in the lane layout illustrates model-use outcomes; panel D presents executable blueprints and validation reports.
 
 <details>
-<summary>四行版英文图注</summary>
+<summary>English four-lane figure caption</summary>
 
 **Evidence-grounded PBPK recommendation and blueprint design.**
 (a) Literature, drug labels, PK studies and public model sources are normalized into source-linked evidence and a versioned model catalog. An evidence subgraph G_i is represented by e_i=f(text(G_i)); its normalized embedding is e-hat_i. The same frozen text encoder f embeds the modeling query q in (b).
@@ -37,55 +41,53 @@ Heavier solid arrows emphasize the main workflow; fine solid connections show in
 
 </details>
 
+[Four-panel design prompt](results/figures/workflow/01_four_panel_en_prompt.txt) · [Four-lane design prompt](results/figures/workflow/02_four_lanes_en_prompt.txt) · [Four-panel renderer](scripts/render_english_panels.py) · [Four-lane renderer](scripts/render_english_lanes.py).
 
-[四宫格设计提示词](results/figures/workflow/01_four_panel_en_prompt.txt) · [四行版设计提示词](results/figures/workflow/02_four_lanes_en_prompt.txt) · [四宫格源码](scripts/render_english_panels.py) · [四行版源码](scripts/render_english_lanes.py)
+Earlier editable artwork remains available: [PowerPoint, three slides](results/figures/workflow/PBPK_workflow_editable.pptx). The SVG and PowerPoint correspond to the historical source-language artwork; English mechanism previews are linked above.
 
-此前的中文结构稿保留：[下载可编辑 PPT（3 页）](results/figures/workflow/PBPK_workflow_editable.pptx)。以下 SVG 与 PPT 对应中文稿，英文机制稿目前提供预览。
-
-| 方案 | 预览 | 矢量图 |
+| Layout | Preview | Vector |
 |---|---|---|
-| 01 四宫格：论文方法总图 | [PNG](results/figures/workflow/01_four_panel.png) | [SVG](results/figures/workflow/01_four_panel.svg) |
-| 02 四行流程：完整过程展开 | [PNG](results/figures/workflow/02_four_lanes.png) | [SVG](results/figures/workflow/02_four_lanes.svg) |
+| Four-panel overview | [PNG](results/figures/workflow/01_four_panel.png) | [SVG](results/figures/workflow/01_four_panel.svg) |
+| Four-lane workflow | [PNG](results/figures/workflow/02_four_lanes.png) | [SVG](results/figures/workflow/02_four_lanes.svg) |
 
-配色参考用户提供的科研图，并经内置图像生成工具探索设计；最终图由矢量元素重建。[设计参考](results/figures/workflow/design_reference.png) · [生成提示词](results/figures/workflow/imagegen_prompt.txt) · [绘图源码](scripts/render_editable_workflow.py)
+Colors follow the supplied research-figure reference. Image generation was used to explore design, and final figures were reconstructed from vector elements. [Design reference](results/figures/workflow/design_reference.png) · [Generation prompt](results/figures/workflow/imagegen_prompt.txt) · [Editable renderer](scripts/render_editable_workflow.py).
 
-| 内容 | 当前规模 |
+| Resource | Current size |
 |---|---:|
-| 可用证据 | 3,266 条，覆盖 100 种药物（2026-10-26 实查；后续补漏进行中） |
-| 公共模型目录 | 202 个模型族、280 个版本 |
-| 目录排序数据 | 772 个需求场景、216,160 对兼容相关性标签 |
+| Usable evidence | 3,266 records covering 100 drugs; checked 2026-10-26, further recovery in progress |
+| Public model catalog | 202 families, 280 versions |
+| Catalog-ranking data | 772 requirement scenarios, 216,160 compatibility-relevance labels |
 
-**证据复核与补漏进行中（2026-10-26）。** 原30药现有2,267条可用证据；37条重复项合并。初次隔离的614条中，来源补全恢复39条，上下文复核另恢复7条；剩余568条继续隔离。新增70药现有999条可用证据：第1批由137条增至422条，包括本次按原始表格逐格核验恢复的45条，已通过来源、关键词与语义检索验收。第2批6次截断请求已补完，正在后续处理；7批尚未全部完成。原始记录、模型目录和冻结实验保留，自动复核不等于专家验证。[表格修复与检索验收](runtime/deployment/evidence_expansion_20261009/recovery_quality_20261014/table_cell_repair_20261026/run_20261009T140919Z/retrieval_verification.json) · [新旧批次覆盖差异](runtime/deployment/evidence_expansion_20261009/recovery_quality_20261014/coverage_audit_20261026.json)。终端执行 `runtime/app-env/bin/python -B scripts/deployment/project_python.py -B scripts/deployment/repair_expansion_quality.py watch` 查看进度。
+**Evidence review and recovery in progress (2026-10-26).** The original 30 drugs have 2,267 usable records; 37 duplicates were merged. Of 614 initially quarantined records, source completion restored 39 and contextual review restored seven; 568 remain quarantined. The additional 70 drugs have 999 usable records. Batch 1 increased from 137 to 422, including 45 restored by cell-level verification against original tables; provenance, keyword, and semantic retrieval checks passed. Six truncated requests in batch 2 were recovered and downstream processing is underway. The seven batches are not all complete. Original records, models, and frozen experiments remain; automated review is not expert validation. [Table repair and retrieval checks](runtime/deployment/evidence_expansion_20261009/recovery_quality_20261014/table_cell_repair_20261026/run_20261009T140919Z/retrieval_verification.json) · [Coverage comparison](runtime/deployment/evidence_expansion_20261009/recovery_quality_20261014/coverage_audit_20261026.json). Monitor with `runtime/app-env/bin/python -B scripts/deployment/project_python.py -B scripts/deployment/repair_expansion_quality.py watch`.
 
-**新库偏少的已查原因：** 抽取提示词存在漏抽，表格列头未参与数值归属校验，后6批尚未完成修复。相同1,419份输入中，修复后558份由空抽取变为非空候选；仍须逐项核验后才能计为可用证据。此前将初次采集暂缓的1,369个药物—论文条目写为“未下载”不准确：逐文件核验后，1,060个已有正文且已解析，304个只有摘要，5个只有元数据；不能由初始100篇上限推断最终下载缺口。[原文与解析核验](runtime/deployment/evidence_expansion_20261009/recovery_quality_20261014/pmc_content_audit_20261026.json)。
+**Reasons for the smaller new collection:** extraction prompts missed records, table headers were excluded from numeric attribution checks, and the remaining six batches had not completed repair. Of the same 1,419 inputs, repair changed 558 from empty extraction to nonempty candidates, still requiring individual verification. The earlier description of 1,369 deferred drug–article items as undownloaded was inaccurate: file-level checking found 1,060 with parsed full text, 304 with abstracts only, and five with metadata only. The initial 100-article limit cannot establish the final download gap. [Content and parsing audit](runtime/deployment/evidence_expansion_20261009/recovery_quality_20261014/pmc_content_audit_20261026.json).
 
-剩余6批沿用已验证的抽取与表格修复，完成来源核对、去重、质量验证后入库。后台每分钟跟进、每20分钟记录审计；仅对确认的生成截断，每批最多执行一次分项恢复，成功后续跑，其他异常停止。上述 `watch` 命令同时显示跟进程序状态，不清零失败次数，不重复下载已有原文。
+The remaining six batches reuse validated extraction and table repair, then undergo source checking, deduplication, and quality validation before import. Background follow-up runs every minute and records an audit every 20 minutes. Only confirmed generation truncation permits one recovery pass per batch, followed by continuation on success; other errors stop the run. `watch` also reports the supervisor state. Failure counters are not reset and existing source files are not downloaded again.
 
-证据批次的 18 个步骤已完成。本批为 20 种此前没有可用证据的药物新增 1,144 条证据，原有 1,728 条保留。模型目录新增 231 个版本；新增版本可用于检索参考，尚未完成科学执行验证。身份目录的 102 条登记不等于证据覆盖了 102 种药物。
+The earlier evidence batch completed all 18 steps. It added 1,144 records for 20 previously uncovered drugs while preserving 1,728 existing records. Model expansion added 231 versions. Those versions support retrieval and reference but have not all passed scientific execution validation. The historical 102 identity registrations do not mean 102 evidence-covered drugs. [Evidence import](data_process/final_evidence/run_20260909T083120Z/00_run_manifest/database_import_summary.json) · [Model expansion checks](experiments/model_recommendation/model_expansion_20260909/final_verification.json).
 
-[证据入库结果](data_process/final_evidence/run_20260909T083120Z/00_run_manifest/database_import_summary.json) · [模型扩库验收](experiments/model_recommendation/model_expansion_20260909/final_verification.json)
+**Model recommendation quality assessment completed (2026-10-01).** The 40,600 primary judgments for 145 core requests, 2,029 repeat judgments, and statistics for 12 methods are complete. On the judged subset of 40 requests with known positives, REARANK/BM25 NDCG@10 was 0.787/0.769, with the difference interval crossing zero. F2LLM applicability class-Y F1 was 0.519; repeat-judgment coverage and reliability remain limited. Table 7 and a concise analysis were added to the manuscript. [Statistics](results/tables/model_recommendation_quality.csv) · [Results and scope](experiments/model_recommendation/results_summary/README.md) · [Manuscript](results/manuscript/pbpk_paper_zh.pdf).
 
-**模型推荐质量评估已完成（2026-10-01）。** 145条核心请求的40,600对主判定、2,029对复判及12方法统计全部完成。40条有已知正例请求的已判子集上，REARANK/BM25的NDCG@10为0.787/0.769，差值区间跨零；F2LLM适用Y类F1为0.519，复判覆盖与可靠性仍不足。已补入论文表7及简洁分析。[全部统计](results/tables/model_recommendation_quality.csv) · [结果与范围](experiments/model_recommendation/results_summary/README.md) · [论文PDF](results/manuscript/pbpk_paper_zh.pdf)
+**PBPK-Match (2026-09-27):** the MLP version is the current main model; typed matching and fusion are structural controls. Implementation, small-scale GPU training, ablations, optimization, and three-seed checking are complete, with 183 checks passed. Only ten development requests with known positives support ranking evaluation: MLP ensemble NDCG@10 was 0.807 versus 0.747 for fusion. Applicability recognition remains weak and model selection needs independent validation. Quality labels for 102 locked test requests were not used for development. [Design, results, inference, and limitations](experiments/model_recommendation/pbpk_match/README.md).
 
-**自建推荐模型 PBPK-Match（2026-09-27）：** 当前采用MLP版作为主模型（即此前的“MLP推荐基线”），类型匹配与融合版作为结构对照。已完成代码、GPU小规模训练、消融、优化和三种子复核，183项检查通过。仅10条有已知正例的开发请求可评排序：MLP集成NDCG@10为0.807，融合版为0.747；适用识别仍弱，主模型选择尚需独立验证。102条锁定测试请求的质量标签不用于开发。[设计、全部结果、推理命令与限制](experiments/model_recommendation/pbpk_match/README.md)。
+**Current development policy:** external-method analysis is complete; no new in-house training or tuning was performed in that assessment. The MLP development results use an earlier, different label snapshot and cannot be compared directly with the later 40-request ranking subset. Further optimization requires development-set diagnosis.
 
-**自建模型安排：** 本次完成外部方法的结果分析，未新增自建模型训练或调参。上述MLP开发成绩使用较早且不同的标签快照，不能与本批40条可排序请求的结果直接比较；是否优化另据开发集诊断决定。
+**LambdaMART's perfect score was audited:** the metric calculation was correct, but labels and input features encode the same matching rules. A shallow tree using only four coverage features reached the same perfect score. New experiments do not treat these labels as scientific answers. Real PK results have been extracted; independent relevance and applicability assessment required separate completion. [Audit](experiments/model_recommendation/runs/expanded_catalog_20260913/lambdamart_audit.json).
 
-**LambdaMART 的满分已复核：指标没有算错，但标签与输入特征表达同一套匹配规则。** 仅四个覆盖特征训练的浅树也能取得同样的排序满分。新实验不使用这些标签作为科学答案；已有真实 PK 结果已提取，独立相关性与适用性判断仍需补齐。[审计结果](experiments/model_recommendation/runs/expanded_catalog_20260913/lambdamart_audit.json)
+Real PBPK execution and blueprint functionality remain. The project-local OSPSuite environment ran 14 Moxifloxacin scenarios and passed engineering checks; independent scientific validation remains incomplete. [Simulation and blueprint results](experiments/README.md).
 
-真实 PBPK 执行与蓝图功能保留。项目内 OSPSuite 环境已就绪，Moxifloxacin 的 14 个场景已运行并通过工程验收，独立科学验证尚未完成。[仿真与蓝图结果](experiments/README.md#4-实际仿真与蓝图)
+The legacy server Streamlit service remains disabled. Ranking, evaluation, and simulation do not require continuous LLM calls. Difficult evidence processing and component generation use the registered server Qwen endpoint only when needed.
 
-Streamlit 保持关闭。排序训练、评测和仿真不需要持续调用 LLM；疑难证据处理与组件生成按需调用已登记的服务器 Qwen 服务。
-
-| 目录 | 内容 |
+| Directory | Contents |
 |---|---|
-| `src/` | 应用和算法代码 |
-| `docs/` | 核心流程、策略、开发与部署说明 |
-| `results/` | 论文图片、最终结果表和支撑数据 |
-| `experiments/` | 当前实验结果、必要输入和实际仿真输出 |
-| `data_process/` | 最终证据、模型目录和批次验收 |
-| `artifacts/` | 原文、公共模型源码和运行资产 |
-| `scripts/` | 部署、数据处理与实验入口 |
-| `tests/` | 必要的功能与规则检查 |
-| `runtime/` | 项目环境、模型权重、数据库和日志 |
-| `dependencies/` | 必需的第三方依赖 |
+| `cloud/` | Portable English Streamlit application and verified research snapshot |
+| `src/` | Application and algorithm implementation |
+| `docs/` | Core workflows, strategy, development, and deployment |
+| `results/` | Manuscript figures, final result tables, and supporting data; retained on the server |
+| `experiments/` | Current results, required inputs, and real simulation outputs; retained on the server |
+| `data_process/` | Final evidence, model catalog, and batch verification |
+| `artifacts/` | Original sources, public model code, and runtime assets |
+| `scripts/` | Deployment, processing, and experiment entry points |
+| `tests/` | Necessary behavior and scientific-rule checks |
+| `runtime/` | Isolated environments, weights, databases, and logs |
+| `dependencies/` | Required third-party assets |

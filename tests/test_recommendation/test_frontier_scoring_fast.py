@@ -8,6 +8,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from frozen_frontier_sources import source_blob
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 v = importlib.import_module("run_frontier_scoring_fast")
 r = v.reasoned
@@ -44,7 +46,7 @@ def setup(tmp_path, monkeypatch):
     comparison = tmp_path / "runtime/v6_comparison.json"
     put(comparison, {"control_count": 64, "predictions_reused": False})
     old = tmp_path / "scripts/run_frontier_scoring_reasoned.py"
-    old.parent.mkdir(); old.write_bytes((REAL_ROOT / "scripts/run_frontier_scoring_reasoned.py").read_bytes())
+    old.parent.mkdir(); old.write_bytes(source_blob("run_frontier_scoring_reasoned.py"))
     monkeypatch.setattr(v, "ROOT", tmp_path); monkeypatch.setattr(v, "FAST", fast)
     for name, value in (("ROOT", tmp_path), ("OUT", out), ("ASSESS", assess), ("RUN", run),
             ("PROFILE", "v7"), ("CONFIG_SHA", "fixture-config"), ("SYSTEM", "same-v5-system")):
@@ -147,6 +149,14 @@ def test_control_comparison_never_imports_predictions_and_is_hash_bound(setup):
     path = v.ROOT / r.CONFIG["v6_control_comparison_file"]
     put(path, {"control_count": 1})
     with pytest.raises(ValueError, match="comparison"): v.verify_bindings()
+
+
+@pytest.mark.parametrize("content", [b"# arbitrary modified source\n", None])
+def test_historical_scheduler_guard_rejects_edits_and_current_english_source(setup, content):
+    old = v.ROOT / "scripts/run_frontier_scoring_reasoned.py"
+    old.write_bytes(content if content is not None else (REAL_ROOT / "scripts/run_frontier_scoring_reasoned.py").read_bytes())
+    with pytest.raises(ValueError, match="Frozen fast wrapper or reasoned scheduler changed"):
+        v.verify_bindings()
 
 
 @pytest.mark.parametrize("relative", ["/etc/passwd", "../outside", "runtime/no-such-file"])

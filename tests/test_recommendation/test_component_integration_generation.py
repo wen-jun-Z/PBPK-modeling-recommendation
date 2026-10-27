@@ -103,7 +103,7 @@ class CharacterTokenizer:
 
 def test_dense_chunking_preserves_all_characters_and_instruction_budget():
     tokenizer = CharacterTokenizer()
-    text = "原始剂量50mg/kg；食物fed；" * 12 + "END"
+    text = "\u539f\u59cb\u5242\u91cf50mg/kg；\u98df\u7269fed；" * 12 + "END"
     pieces = generate.complete_text_chunks(tokenizer, text, prefix="QUERY: ", limit=32)
     assert len(pieces) > 1
     assert "".join(p for p, _ in pieces) == text

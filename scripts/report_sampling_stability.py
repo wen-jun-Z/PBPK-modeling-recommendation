@@ -442,10 +442,10 @@ def plot(export=False):
                 raise ValueError('Malformed figure section')
             before,tail=text.split(start);_,after=tail.split(stop);text=before.rstrip()+'\n'+after.lstrip()
         text += ('\n'+start+'\n\n![Thirty-drug stability evaluation](comparison.png)\n\n'
-                 '图中上部为新增20药主要结果及研究聚类95%区间；下部保留全部30药的逐药误差比，包括极端值。'
-                 '蓝色同时包含选点与拟合修正，橙色在相同拟合修正下比较选点，不能把拟合收益归给选点算法。'
-                 '原10药按研究留出，新增20药不训练评分器；当前资料均已查看，属于开发验证。'
-                 '独立复核已重算模型、固定选择、所有标量误差、总体和配对统计。\n\n'+stop+'\n')
+                 'The upper panel shows primary additional-20 results with study-cluster 95% intervals; the lower panel retains all 30 per-drug error ratios, including extremes.'
+                 'Blue combines selection and fitting changes; orange compares selection under identical fitting repair. Fitting gains must not be attributed to the selection algorithm.'
+                 'Original-ten drugs use study holdout; additional-20 drugs do not train the scorer. All data were inspected and this remains development evaluation.'
+                 'Independent checks recalculated models, fixed selections, every scalar error, and aggregate and paired statistics.\n\n'+stop+'\n')
         path.write_text(text)
     import matplotlib.pyplot as plt
     plt.close(fig)

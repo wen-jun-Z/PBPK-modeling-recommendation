@@ -374,7 +374,7 @@ def main():
         font_check = audit_pdf_descendant_fonts(paths[0])
         unresolved = [(path, severity, message) for path, (issues, _) in checks.items()
                       for severity, message in issues if severity in ("WARN", "FAIL")
-                      and not (path == str(paths[0]) and severity == "WARN" and "字体可能未嵌入" in message
+                      and not (path == str(paths[0]) and severity == "WARN" and 'Font may not be embedded' in message
                                and font_check["all_embedded"])]
         (qa_dir / "exports.json").write_text(json.dumps(dict(skill_checks=checks, pdf_descendant_fonts=font_check,
             shallow_font_warning_resolved=True, unresolved=unresolved), indent=2, default=str))
